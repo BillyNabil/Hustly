@@ -1,26 +1,318 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+
+    --card: 240 10% 5%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 45 93% 47%;
+    /* Default: Gold */
+    --primary-foreground: 0 0% 0%;
+
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+
+    --accent: 43 96% 56%;
+    --accent-foreground: 26 83% 14%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 45 30% 15%;
+    --input: 240 3.7% 15.9%;
+    --ring: 45 93% 47%;
+
+    --radius: 0.75rem;
+
+    /* Theme colors (overridden by data-theme attribute) */
+    --theme-primary: #F59E0B;
+    --theme-primary-light: #FBBF24;
+    --theme-primary-dark: #D97706;
+    --theme-primary-hsl: 45 93% 47%;
+
+    /* Animation timing variables */
+    --duration-micro: 0.1s;
+    --duration-fast: 0.15s;
+    --duration-normal: 0.2s;
+    --duration-smooth: 0.25s;
+
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+    --ease-snappy: cubic-bezier(0.2, 0, 0, 1);
+  }
+
+  /* Theme color overrides */
+  [data-theme="amber"] {
+    --primary: 45 93% 47%;
+    --accent: 43 96% 56%;
+    --ring: 45 93% 47%;
+    --border: 45 30% 15%;
+  }
+
+  [data-theme="emerald"] {
+    --primary: 160 84% 39%;
+    --accent: 158 64% 52%;
+    --ring: 160 84% 39%;
+    --border: 160 30% 15%;
+  }
+
+  [data-theme="violet"] {
+    --primary: 258 90% 66%;
+    --accent: 255 92% 76%;
+    --ring: 258 90% 66%;
+    --border: 258 30% 15%;
+  }
+
+  [data-theme="rose"] {
+    --primary: 350 89% 60%;
+    --accent: 350 89% 70%;
+    --ring: 350 89% 60%;
+    --border: 350 30% 15%;
+  }
+
+  [data-theme="cyan"] {
+    --primary: 189 94% 43%;
+    --accent: 188 86% 53%;
+    --ring: 189 94% 43%;
+    --border: 189 30% 15%;
+  }
+
+  [data-theme="orange"] {
+    --primary: 25 95% 53%;
+    --accent: 27 96% 61%;
+    --ring: 25 95% 53%;
+    --border: 25 30% 15%;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer base {
+  * {
+    /* Force GPU acceleration for smoother animations */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased selection:bg-primary/20 selection:text-primary;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    /* Prevent layout shifts */
+    overflow-x: hidden;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-bold tracking-tight;
+  }
+
+  /* Reduce motion for users who prefer it */
+  @media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer utilities {
+  .text-gradient-gold {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(to right, hsl(var(--primary)), hsl(var(--accent)), hsl(var(--primary)));
+  }
+
+  .glass-panel {
+    @apply bg-background/60 backdrop-blur-xl border border-primary/5;
+  }
+
+  .gold-glow {
+    box-shadow: 0 0 30px -5px hsl(var(--primary) / 0.3);
+  }
+
+  /* GPU-accelerated animations - only use transform and opacity */
+  .gpu-accelerate {
+    transform: translateZ(0);
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+
+  /* Optimized transitions using CSS variables */
+  .transition-micro {
+    transition-property: transform, opacity, background-color, color, border-color;
+    transition-duration: var(--duration-micro);
+    transition-timing-function: var(--ease-snappy);
+  }
+
+  .transition-fast {
+    transition-property: transform, opacity, background-color, color, border-color;
+    transition-duration: var(--duration-fast);
+    transition-timing-function: var(--ease-in-out);
+  }
+
+  .transition-smooth {
+    transition-property: transform, opacity, background-color, color, border-color;
+    transition-duration: var(--duration-normal);
+    transition-timing-function: var(--ease-out);
+  }
+
+  /* Hover lift effect - minimal transform */
+  .hover-lift {
+    transition: transform var(--duration-fast) var(--ease-out);
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-1px);
+  }
+
+  /* Optimized card hover - transform only */
+  .card-hover {
+    transition: transform var(--duration-fast) var(--ease-out),
+      border-color var(--duration-fast) var(--ease-out);
+  }
+
+  .card-hover:hover {
+    @apply border-primary/30;
+    transform: translateY(-1px);
+  }
+
+  /* Active/pressed state */
+  .press-effect:active {
+    transform: scale(0.98);
+  }
+
+  /* Smooth color transitions only */
+  .transition-colors-fast {
+    transition: color var(--duration-fast) var(--ease-in-out),
+      background-color var(--duration-fast) var(--ease-in-out);
+  }
+}
+
+/* Custom Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, hsl(var(--primary) / 0.3) 0%, hsl(var(--primary) / 0.15) 100%);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, hsl(var(--primary) / 0.5) 0%, hsl(var(--primary) / 0.3) 100%);
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--primary) / 0.3) transparent;
+}
+
+/* Thin scrollbar variant */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 4px;
+}
+
+/* Hide scrollbar but keep functionality */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Optimized animation keyframes */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pulse-glow {
+
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn var(--duration-normal) var(--ease-out) forwards;
+}
+
+.animate-slide-up {
+  animation: slideUp var(--duration-normal) var(--ease-out) forwards;
+}
+
+.animate-scale-in {
+  animation: scaleIn var(--duration-normal) var(--ease-out) forwards;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s var(--ease-in-out) infinite;
 }
