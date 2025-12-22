@@ -207,7 +207,115 @@ Download the latest release from the [Releases](#releases) section.
 
 ---
 
-## 📁 Project Structure
+## � Screenshots
+
+<p align="center">
+  <img src="public/screenshots/preview.png" alt="Hustly App Preview" width="100%" />
+</p>
+
+### 🎯 Main Dashboard
+The central hub for all your hustle activities with real-time stats and quick access to all features.
+
+<p align="center">
+  <img src="public/screenshots/dashboard-preview.png" alt="Dashboard" width="100%" />
+</p>
+
+### 📋 Idea Management (Kanban Board)
+<table>
+  <tr>
+    <td width="50%">
+      <img src="public/screenshots/kanban-board.png" alt="Kanban Board" width="100%" />
+      <p align="center"><em>Organize ideas with drag-and-drop Kanban</em></p>
+    </td>
+    <td width="50%">
+      <img src="public/screenshots/kanban-detail.png" alt="Task Details" width="100%" />
+      <p align="center"><em>Detailed task management with priorities</em></p>
+    </td>
+  </tr>
+</table>
+
+### 💰 Finance Tracker
+<table>
+  <tr>
+    <td width="50%">
+      <img src="public/screenshots/finance-overview.png" alt="Finance Overview" width="100%" />
+      <p align="center"><em>Track income and expenses</em></p>
+    </td>
+    <td width="50%">
+      <img src="public/screenshots/finance-charts.png" alt="Financial Charts" width="100%" />
+      <p align="center"><em>Beautiful analytics and insights</em></p>
+    </td>
+  </tr>
+</table>
+
+### 🎯 Goals & Habits
+<table>
+  <tr>
+    <td width="50%">
+      <img src="public/screenshots/weekly-goals.png" alt="Weekly Goals" width="100%" />
+      <p align="center"><em>Set and track weekly objectives</em></p>
+    </td>
+    <td width="50%">
+      <img src="public/screenshots/habits-tracker.png" alt="Habits Tracker" width="100%" />
+      <p align="center"><em>Build consistency with streak tracking</em></p>
+    </td>
+  </tr>
+</table>
+
+### 🤖 Ghost CEO AI Chat
+<p align="center">
+  <img src="public/screenshots/ghost-ceo-chat.png" alt="AI Chat" width="70%" />
+  <br/>
+  <em>Your personal AI business advisor powered by Google Gemini</em>
+</p>
+
+### 🏆 Achievements & Leaderboard
+<table>
+  <tr>
+    <td width="50%">
+      <img src="public/screenshots/achievements.png" alt="Achievements" width="100%" />
+      <p align="center"><em>Unlock achievements as you progress</em></p>
+    </td>
+    <td width="50%">
+      <img src="public/screenshots/leaderboard.png" alt="Leaderboard" width="100%" />
+      <p align="center"><em>Compete with other hustlers</em></p>
+    </td>
+  </tr>
+</table>
+
+### 🖼️ Vision Board & Analytics
+<table>
+  <tr>
+    <td width="50%">
+      <img src="public/screenshots/vision-board.png" alt="Vision Board" width="100%" />
+      <p align="center"><em>Visualize your goals and dreams</em></p>
+    </td>
+    <td width="50%">
+      <img src="public/screenshots/analytics.png" alt="Analytics Dashboard" width="100%" />
+      <p align="center"><em>Comprehensive productivity metrics</em></p>
+    </td>
+  </tr>
+</table>
+
+### 📱 Responsive Design
+<p align="center">
+  <img src="public/screenshots/mobile-responsive.png" alt="Mobile View" width="50%" />
+  <br/>
+  <em>Fully responsive design works on all devices</em>
+</p>
+
+> **📝 Screenshots Note:** 
+> 
+> The application screenshots referenced above will be captured and added to the repository soon. For now, you can:
+> - **Try it yourself**: Run `npm run dev` and explore the app at `http://localhost:3000`
+> - **Capture screenshots**: Follow the guide in [docs/SCREENSHOTS.md](docs/SCREENSHOTS.md) to capture your own
+> - **Contribute**: Help us by adding quality screenshots via pull request!
+> 
+> The UI features a stunning glassmorphism design with dark mode theme, smooth animations, and responsive layouts that work beautifully on all devices.
+
+---
+
+## �📁 Project Structure
 
 ```
 hustly/web/
