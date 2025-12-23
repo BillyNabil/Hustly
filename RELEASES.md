@@ -6,6 +6,44 @@ All notable changes and releases of Hustly are documented here.
 
 ## 🚀 Latest Release
 
+### v0.1.3 - Major UI Update
+**📅 Released:** December 23, 2025
+
+#### Downloads
+
+| Platform | Architecture | Installer | Size | Notes |
+|----------|--------------|-----------|------|-------|
+| Windows | x64 | [Hustly_0.1.2_x64-setup.exe](./src-tauri/target/release/bundle/nsis/Hustly_0.1.2_x64-setup.exe) | 2.4 MB | NSIS Installer (Recommended) |
+| Windows | x64 | [Hustly_0.1.2_x64_en-US.msi](./src-tauri/target/release/bundle/msi/Hustly_0.1.2_x64_en-US.msi) | 2.3 MB | MSI Package |
+
+#### ✨ New Features
+- **Schedule & Time Blocking** - New page for daily schedule management with drag-and-drop time blocks
+- **Overview Dashboard** - Bird's eye view of all your productivity metrics
+- **Push Notifications** - PWA push notification support with Supabase Edge Functions
+- **Visualizer Components** - Beautiful animated visualizers for all pages (Dashboard, Achievements, Analytics, Challenges, Chat, Finance, Goals, Habits, Ideas, Leaderboard, Schedule, Settings, Vision)
+- **Modern Background** - New animated gradient background component
+- **Auth Background** - Animated background for login/register pages
+- **Notification Permission Prompt** - Smart prompt for enabling notifications
+
+#### 🎨 UI/UX Improvements
+- Refined glassmorphism effects across all pages
+- New animated input components
+- Better page transitions and animations
+- Improved responsive design
+- Updated README with complete documentation
+
+#### 🐛 Bug Fixes
+- Fixed missing `X` icon import in KanbanBoard component
+- Fixed various TypeScript type issues
+
+#### 📦 New Files Added
+- 20+ new visualizer and UI components
+- Push notification service and edge functions
+- Time blocking database migrations
+- Display name and daily challenges migrations
+
+---
+
 ### v0.1.2 - UI Fix
 **📅 Released:** December 22, 2024
 
