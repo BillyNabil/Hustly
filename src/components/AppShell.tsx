@@ -2,22 +2,40 @@
 
 import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import { useAuth } from "@/lib/auth-context";
+import { useTimeBlockNotifications } from "@/lib/notifications";
 import Sidebar from "@/components/Sidebar";
 import TitleBar from "@/components/TitleBar";
 import MobileNav from "@/components/MobileNav";
-import FloatingMusicButton from "@/components/FloatingMusicButton";
-import HeaderBar from "@/components/HeaderBar";
-import { PWAInstallPrompt } from "@/components/PWAProvider";
 import { motion } from "framer-motion";
 import Image from "next/image";
+
+// Only lazy-load non-critical components
+const FloatingMusicButton = dynamic(() => import("@/components/FloatingMusicButton"), { ssr: false });
+const PWAInstallPrompt = dynamic(
+    () => import("@/components/PWAProvider").then(mod => ({ default: mod.PWAInstallPrompt })),
+    { ssr: false }
+);
+const NotificationPermissionPrompt = dynamic(
+    () => import("@/components/NotificationPermissionPrompt").then(mod => ({ default: mod.NotificationPermissionPrompt })),
+    { ssr: false }
+);
 
 // Routes that don't require authentication and don't show sidebar
 const publicRoutes = ["/landing", "/login", "/register"];
 
-// Check if a route is public
+// Routes that can be viewed publicly but will show sidebar if logged in
+const publicAllowedRoutes = ["/overview"];
+
+// Check if a route is public (no auth required)
 function isPublicRoute(pathname: string): boolean {
     return publicRoutes.some(route => pathname.startsWith(route));
+}
+
+// Check if a route can be viewed publicly
+function isPublicAllowedRoute(pathname: string): boolean {
+    return publicAllowedRoutes.some(route => pathname.startsWith(route));
 }
 
 interface AppShellProps {
@@ -29,15 +47,19 @@ export default function AppShell({ children }: AppShellProps) {
     const pathname = usePathname();
     const router = useRouter();
     const isPublic = isPublicRoute(pathname);
+    const canViewPublicly = isPublicAllowedRoute(pathname);
+
+    // Initialize time block notifications for authenticated users
+    useTimeBlockNotifications();
 
     useEffect(() => {
         if (!loading) {
-            // If not logged in and trying to access protected route
-            if (!user && !isPublic) {
+            // If not logged in and trying to access protected route (but not public-allowed routes)
+            if (!user && !isPublic && !canViewPublicly) {
                 router.push("/landing");
             }
         }
-    }, [user, loading, isPublic, router]);
+    }, [user, loading, isPublic, canViewPublicly, router]);
 
     // Show loading state - CLEAN & SIMPLE VERSION
     if (loading) {
@@ -101,6 +123,18 @@ export default function AppShell({ children }: AppShellProps) {
         );
     }
 
+    // Public-allowed routes (like /overview): show without sidebar if not logged in
+    if (canViewPublicly && !user) {
+        return (
+            <div id="app-container" className="flex flex-col h-full will-change-transform">
+                <TitleBar />
+                <main className="flex-1 overflow-auto relative">
+                    {children}
+                </main>
+            </div>
+        );
+    }
+
     // Protected routes: with sidebar
     // Redirect if not authenticated (handled in useEffect, but also guard here)
     if (!user) {
@@ -116,10 +150,11 @@ export default function AppShell({ children }: AppShellProps) {
                     {children}
                 </main>
             </div>
-            <HeaderBar />
             <MobileNav />
             <FloatingMusicButton />
             <PWAInstallPrompt />
+            <NotificationPermissionPrompt />
         </div>
     );
 }
+

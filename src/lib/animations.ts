@@ -4,13 +4,13 @@
 // Custom easing functions for different animation types
 export const easings = {
   // Smooth ease out - best for enter animations
-  easeOut: [0.16, 1, 0.3, 1] as const,
+  easeOut: [0.25, 0.8, 0.25, 1] as const,
   // Quick ease in-out - best for hover/interactions
-  easeInOut: [0.4, 0, 0.2, 1] as const,
+  easeInOut: [0.42, 0, 0.58, 1] as const,
   // Smooth deceleration - best for closing/collapsing
-  decelerate: [0, 0, 0.2, 1] as const,
+  decelerate: [0.25, 1, 0.5, 1] as const,
   // Smooth acceleration - best for opening/expanding
-  accelerate: [0.4, 0, 1, 1] as const,
+  accelerate: [0.9, 0, 0.5, 0.5] as const,
   // Spring-like - for playful interactions
   spring: [0.34, 1.56, 0.64, 1] as const,
   // Linear for continuous animations
@@ -19,51 +19,51 @@ export const easings = {
   snappy: [0.2, 0, 0, 1] as const,
 };
 
-// Optimized transition configs
+// Optimized transition configs - SLOWED DOWN for smoother feel
 export const transitions = {
   // Ultra-fast micro-interactions (buttons, hovers)
   micro: {
-    duration: 0.1,
+    duration: 0.2, // Was 0.1
     ease: easings.snappy,
   },
   // Fast micro-interactions (buttons, hovers)
   fast: {
-    duration: 0.15,
+    duration: 0.3, // Was 0.15
     ease: easings.easeInOut,
   },
-  // Normal transitions
+  // Normal transitions - General UI elements
   normal: {
-    duration: 0.2,
+    duration: 0.5, // Was 0.2
     ease: easings.easeOut,
   },
   // Smooth page/modal transitions
   smooth: {
-    duration: 0.3,
+    duration: 0.7, // Was 0.3
     ease: easings.easeOut,
   },
   // Sidebar expand/collapse
   sidebar: {
-    duration: 0.25,
+    duration: 0.4, // Was 0.25
     ease: easings.easeInOut,
   },
   // Spring for playful elements
   spring: {
     type: "spring" as const,
-    stiffness: 400,
-    damping: 30,
+    stiffness: 200, // Was 400
+    damping: 25, // Was 30
   },
   // Gentle spring for cards
   gentleSpring: {
     type: "spring" as const,
-    stiffness: 300,
-    damping: 25,
+    stiffness: 150, // Was 300
+    damping: 20, // Was 25
   },
   // Snappy spring for quick feedback
   snappySpring: {
     type: "spring" as const,
-    stiffness: 500,
-    damping: 30,
-    mass: 0.8,
+    stiffness: 300, // Was 500
+    damping: 25,
+    mass: 1,
   },
 };
 
@@ -73,8 +73,8 @@ export const staggerContainer = {
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.04,
-      delayChildren: 0.08,
+      staggerChildren: 0.1, // Was 0.04
+      delayChildren: 0.1, // Was 0.08
     },
   },
 };
@@ -85,7 +85,7 @@ export const fastStaggerContainer = {
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.03,
+      staggerChildren: 0.08, // Was 0.03
       delayChildren: 0.05,
     },
   },
@@ -104,7 +104,7 @@ export const fadeIn = {
 export const fadeUp = {
   hidden: {
     opacity: 0,
-    y: 8,
+    y: 15, // Increased distance for softer movement
   },
   visible: {
     opacity: 1,
@@ -117,7 +117,7 @@ export const fadeUp = {
 export const fadeDown = {
   hidden: {
     opacity: 0,
-    y: -8,
+    y: -15,
   },
   visible: {
     opacity: 1,
@@ -130,7 +130,7 @@ export const fadeDown = {
 export const scaleIn = {
   hidden: {
     opacity: 0,
-    scale: 0.96,
+    scale: 0.95, // Subtler scale
   },
   visible: {
     opacity: 1,
@@ -139,7 +139,7 @@ export const scaleIn = {
   },
   exit: {
     opacity: 0,
-    scale: 0.96,
+    scale: 0.95,
     transition: transitions.fast,
   },
 };
@@ -148,7 +148,7 @@ export const scaleIn = {
 export const slideRight = {
   hidden: {
     opacity: 0,
-    x: 16,
+    x: 20,
   },
   visible: {
     opacity: 1,
@@ -161,7 +161,7 @@ export const slideRight = {
 export const slideLeft = {
   hidden: {
     opacity: 0,
-    x: -16,
+    x: -20,
   },
   visible: {
     opacity: 1,
@@ -170,20 +170,20 @@ export const slideLeft = {
   },
 };
 
-// Card hover animation
+// Card hover animation - Subtler
 export const cardHover = {
   rest: {
     scale: 1,
     y: 0,
   },
   hover: {
-    scale: 1.01,
-    y: -1,
-    transition: transitions.micro,
+    scale: 1.02,
+    y: -2,
+    transition: { duration: 0.3, ease: easings.easeOut },
   },
   tap: {
-    scale: 0.99,
-    transition: transitions.micro,
+    scale: 0.98,
+    transition: { duration: 0.1 },
   },
 };
 
@@ -191,12 +191,12 @@ export const cardHover = {
 export const buttonHover = {
   rest: { scale: 1 },
   hover: {
-    scale: 1.02,
-    transition: transitions.micro,
+    scale: 1.03,
+    transition: { duration: 0.2, ease: easings.easeOut },
   },
   tap: {
-    scale: 0.98,
-    transition: { duration: 0.08 },
+    scale: 0.97,
+    transition: { duration: 0.1 },
   },
 };
 
@@ -204,13 +204,13 @@ export const buttonHover = {
 export const listItem = {
   hidden: {
     opacity: 0,
-    y: 6,
+    y: 10,
   },
   visible: {
     opacity: 1,
     y: 0,
     transition: {
-      duration: 0.18,
+      duration: 0.4, // Was 0.18
       ease: easings.easeOut,
     },
   },
@@ -224,14 +224,14 @@ export const pageTransition = {
   animate: {
     opacity: 1,
     transition: {
-      duration: 0.18,
+      duration: 0.5, // Was 0.18
       ease: easings.easeOut,
     },
   },
   exit: {
     opacity: 0,
     transition: {
-      duration: 0.12,
+      duration: 0.3, // Was 0.12
     },
   },
 };
@@ -241,35 +241,35 @@ export const modalOverlay = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: { duration: 0.18 },
+    transition: { duration: 0.4 },
   },
   exit: {
     opacity: 0,
-    transition: { duration: 0.12 },
+    transition: { duration: 0.3 },
   },
 };
 
 export const modalContent = {
   hidden: {
     opacity: 0,
-    scale: 0.96,
-    y: 8,
+    scale: 0.95,
+    y: 10,
   },
   visible: {
     opacity: 1,
     scale: 1,
     y: 0,
     transition: {
-      duration: 0.25,
+      duration: 0.5, // Was 0.25
       ease: easings.easeOut,
     },
   },
   exit: {
     opacity: 0,
-    scale: 0.96,
-    y: 8,
+    scale: 0.95,
+    y: 10,
     transition: {
-      duration: 0.15,
+      duration: 0.3,
       ease: easings.accelerate,
     },
   },
@@ -284,7 +284,7 @@ export const kanbanCard = {
   dragging: {
     scale: 1.02,
     boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
-    transition: transitions.micro,
+    transition: transitions.fast,
   },
 };
 
@@ -294,7 +294,7 @@ export const progressBar = {
   animate: (progress: number) => ({
     scaleX: progress / 100,
     transition: {
-      duration: 0.4,
+      duration: 1.0, // Was 0.4
       ease: easings.easeOut,
     },
   }),
@@ -302,7 +302,7 @@ export const progressBar = {
 
 // Number counter animation helper
 export const counterConfig = {
-  duration: 0.6,
+  duration: 1.5, // Was 0.6
   ease: easings.easeOut,
 };
 
@@ -311,16 +311,16 @@ export const sidebarVariants = {
   expanded: {
     width: 240,
     transition: {
-      duration: 0.25,
-      ease: easings.easeOut,
+      duration: 0.4,
+      ease: easings.easeInOut,
     }
   },
   collapsed: {
     width: 72,
     transition: {
-      duration: 0.3,
-      delay: 0.2, // Wait for text to fade out first (text exit = 0.15s)
-      ease: easings.decelerate,
+      duration: 0.4,
+      delay: 0.1,
+      ease: easings.easeInOut, // Decelerate felt too abrupt
     }
   }
 };
@@ -331,8 +331,8 @@ export const sidebarTextVariants = {
     opacity: 1,
     x: 0,
     transition: {
-      duration: 0.15,
-      delay: 0.08,
+      duration: 0.3,
+      delay: 0.15,
       ease: easings.easeOut,
     }
   },
@@ -340,9 +340,8 @@ export const sidebarTextVariants = {
     opacity: 0,
     x: -4,
     transition: {
-      duration: 0.12,
-      delay: 0.05, // Text hides with slight delay
-      ease: easings.decelerate,
+      duration: 0.2,
+      ease: easings.easeOut,
     }
   }
 };
@@ -351,8 +350,8 @@ export const sidebarTextVariants = {
 export const dropdownVariants = {
   hidden: {
     opacity: 0,
-    y: 8,
-    scale: 0.96,
+    y: 5,
+    scale: 0.98,
     pointerEvents: "none" as const,
   },
   visible: {
@@ -361,7 +360,7 @@ export const dropdownVariants = {
     scale: 1,
     pointerEvents: "auto" as const,
     transition: {
-      duration: 0.18,
+      duration: 0.3,
       ease: easings.easeOut,
     }
   }
@@ -375,7 +374,7 @@ export const toastVariants = {
     y: 0,
     scale: 1,
     transition: {
-      duration: 0.25,
+      duration: 0.4,
       ease: easings.easeOut,
     }
   },
@@ -384,7 +383,7 @@ export const toastVariants = {
     y: -10,
     scale: 0.95,
     transition: {
-      duration: 0.15,
+      duration: 0.3,
       ease: easings.accelerate,
     }
   },
@@ -416,9 +415,9 @@ export const getAnimationProps = (variants: Record<string, unknown>) => {
 export const createTransformAnimation = (
   from: { x?: number; y?: number; scale?: number; rotate?: number },
   to: { x?: number; y?: number; scale?: number; rotate?: number },
-  duration = 0.2
+  duration = 0.4 // Was 0.2
 ) => ({
   initial: { ...from, opacity: from.scale === 0 ? 0 : 1 },
   animate: { ...to, opacity: 1, transition: { duration, ease: easings.easeOut } },
-  exit: { ...from, opacity: from.scale === 0 ? 0 : 1, transition: { duration: duration * 0.7, ease: easings.accelerate } },
+  exit: { ...from, opacity: from.scale === 0 ? 0 : 1, transition: { duration: duration * 0.8, ease: easings.accelerate } },
 });

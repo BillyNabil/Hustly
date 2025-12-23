@@ -66,6 +66,10 @@ export async function updateIdea(id: string, updates: Partial<Idea>): Promise<Id
         console.error("Error updating idea:", error);
         return null;
     }
+    if (data && updates.status === 'done') {
+        // Auto-update daily challenge
+        await checkDailyChallengeProgress('task_complete');
+    }
     return data;
 }
 
@@ -80,6 +84,28 @@ export async function deleteIdea(id: string): Promise<boolean> {
         return false;
     }
     return true;
+}
+
+export async function getUpcomingIdeaDeadlines(hours: number = 24): Promise<Idea[]> {
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) return [];
+
+    const now = new Date();
+    const future = new Date(now.getTime() + hours * 60 * 60 * 1000);
+
+    const { data, error } = await supabase
+        .from("ideas")
+        .select("*")
+        .eq("user_id", userData.user.id)
+        .gte("due_date", now.toISOString())
+        .lte("due_date", future.toISOString())
+        .neq("status", "done");
+
+    if (error) {
+        console.error("Error fetching idea deadlines:", error);
+        return [];
+    }
+    return data || [];
 }
 
 // =============================================
@@ -121,6 +147,9 @@ export async function createTransaction(transaction: Partial<Transaction>): Prom
     if (transaction.type === "income" && transaction.amount) {
         await updateProfileStats({ addEarnings: transaction.amount });
     }
+
+    // Auto-update daily challenge
+    await checkDailyChallengeProgress('transaction', 1, { type: transaction.type, amount: transaction.amount });
 
     return data;
 }
@@ -296,12 +325,38 @@ export async function saveFocusSession(session: Partial<FocusSession>): Promise<
         await updateProfileStats({ addFocusMinutes: session.duration_minutes });
     }
 
+    // Auto-update daily challenge
+    if (session.duration_minutes) {
+        await checkDailyChallengeProgress('focus_session', session.duration_minutes);
+    }
+
     return data;
 }
 
 // =============================================
 // PROFILE & STATS
 // =============================================
+
+export async function uploadAvatar(file: File): Promise<string | null> {
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) return null;
+
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${userData.user.id}-${Math.random()}.${fileExt}`;
+    const filePath = `${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file);
+
+    if (uploadError) {
+        console.error('Error uploading avatar:', uploadError);
+        return null;
+    }
+
+    const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
+    return data.publicUrl;
+}
 
 export async function getProfile(): Promise<Profile | null> {
     const { data: userData } = await supabase.auth.getUser();
@@ -415,6 +470,7 @@ export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
 export interface DashboardStats {
     productivityScore: number;
     monthlyIncome: number;
+    monthlyExpense: number;
     hustleLevel: string;
     tasksCompleted: number;
     focusHours: number;
@@ -434,14 +490,19 @@ export async function getDashboardStats(): Promise<DashboardStats> {
         .select("id")
         .eq("status", "done");
 
-    // Get monthly income
+    // Get monthly transactions
     const { data: monthlyTransactions } = await supabase
         .from("transactions")
-        .select("amount")
-        .eq("type", "income")
+        .select("amount, type")
         .gte("date", startOfMonth.toISOString().split("T")[0]);
 
-    const monthlyIncome = (monthlyTransactions || []).reduce((sum, t) => sum + (t.amount || 0), 0);
+    const monthlyIncome = (monthlyTransactions || [])
+        .filter(t => t.type === 'income')
+        .reduce((sum, t) => sum + (t.amount || 0), 0);
+
+    const monthlyExpense = (monthlyTransactions || [])
+        .filter(t => t.type === 'expense')
+        .reduce((sum, t) => sum + (t.amount || 0), 0);
 
     // Get active goals
     const { data: activeGoals } = await supabase
@@ -452,6 +513,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     return {
         productivityScore: profile?.productivity_score || 0,
         monthlyIncome,
+        monthlyExpense,
         hustleLevel: profile?.hustle_level || "Newbie Hustler",
         tasksCompleted: (completedTasks || []).length,
         focusHours: profile?.total_focus_hours || 0,
@@ -603,6 +665,9 @@ export async function completeHabit(habitId: string, date?: string): Promise<Hab
 
     // Update daily stats
     await updateDailyStats({ addHabitsCompleted: 1 });
+
+    // Auto-update daily challenge
+    await checkDailyChallengeProgress('habit_complete');
 
     return data;
 }
@@ -805,21 +870,207 @@ export async function checkAndUnlockAchievements(): Promise<Achievement[]> {
 // DAILY CHALLENGES
 // =============================================
 
+// Challenge templates for auto-generation
+// Challenge templates for auto-generation (50 Diverse Challenges)
+const CHALLENGE_TEMPLATES = [
+    // PRODUCTIVITY (Task Focused)
+    { title: "Power Trio", description: "Complete 3 high-priority tasks today.", challenge_type: "tasks", target_value: 3, points_reward: 50 },
+    { title: "Task Crusher", description: "Complete 5 tasks to dominate the day.", challenge_type: "tasks", target_value: 5, points_reward: 75 },
+    { title: "Clear the Decks", description: "Complete 8 tasks. Empty that backlog!", challenge_type: "tasks", target_value: 8, points_reward: 120 },
+    { title: "Single Focus", description: "Complete 1 major task (High Priority).", challenge_type: "tasks", target_value: 1, points_reward: 40 },
+    { title: "Morning Momentum", description: "Complete a task before 10 AM.", challenge_type: "early_task", target_value: 1, points_reward: 45 },
+    { title: "Quick Wins", description: "Complete 3 quick/low priority tasks.", challenge_type: "tasks", target_value: 3, points_reward: 35 },
+    { title: "Weekend Warrior", description: "Complete 5 tasks over the weekend.", challenge_type: "tasks", target_value: 5, points_reward: 60 },
+    { title: "Review Day", description: "Clear out your 'Review' column tasks.", challenge_type: "tasks", target_value: 2, points_reward: 40 },
+    { title: "Inbox Zero", description: "Process and organize 5 backlog ideas.", challenge_type: "tasks", target_value: 5, points_reward: 50 },
+    { title: "Project Finisher", description: "Mark a major project/collection as Done.", challenge_type: "tasks", target_value: 1, points_reward: 100 },
+
+    // FOCUS (Deep Work)
+    { title: "Deep Dive", description: "Log 60 minutes of uninterrupted focus.", challenge_type: "focus", target_value: 60, points_reward: 50 },
+    { title: "Focus Master", description: "Log 2 hours (120 min) of pure focus.", challenge_type: "focus", target_value: 120, points_reward: 80 },
+    { title: "Flow State", description: "Complete 4 focus sessions today.", challenge_type: "focus", target_value: 4, points_reward: 70 },
+    { title: "The Marathon", description: "Log 4 hours of focus today. You beast!", challenge_type: "focus", target_value: 240, points_reward: 150 },
+    { title: "Pomodoro Pro", description: "Complete 3 Pomodoro sessions (25m each).", challenge_type: "focus", target_value: 75, points_reward: 55 },
+    { title: "Zen Mode", description: "Log 30 minutes of focus before noon.", challenge_type: "focus", target_value: 30, points_reward: 40 },
+    { title: "Evening Grind", description: "Log 60 minutes of focus after 6 PM.", challenge_type: "focus", target_value: 60, points_reward: 60 },
+    { title: "Short Burst", description: "Complete a 15-minute intense focus sprint.", challenge_type: "focus", target_value: 15, points_reward: 20 },
+    { title: "Focus Streak", description: "Hit your daily focus target 2 days in a row.", challenge_type: "focus", target_value: 1, points_reward: 50 },
+    { title: "Distraction Free", description: "Log a 90-minute session without pauses.", challenge_type: "focus", target_value: 90, points_reward: 100 },
+
+    // HABITS (Consistency)
+    { title: "Habit Hero", description: "Complete 3 different habits today.", challenge_type: "habits", target_value: 3, points_reward: 50 },
+    { title: "Perfect Day", description: "Complete ALL your active habits.", challenge_type: "habits", target_value: 5, points_reward: 100 },
+    { title: "Streak Keeper", description: "Extend a habit streak today.", challenge_type: "habits", target_value: 1, points_reward: 30 },
+    { title: "New Routine", description: "Complete a newly created habit.", challenge_type: "habits", target_value: 1, points_reward: 40 },
+    { title: "Consistency King", description: "Complete 5 habits today.", challenge_type: "habits", target_value: 5, points_reward: 80 },
+    { title: "Health Check", description: "Complete a health-related habit.", challenge_type: "habits", target_value: 1, points_reward: 35 },
+    { title: "Learning Log", description: "Complete a learning/skill habit.", challenge_type: "habits", target_value: 1, points_reward: 35 },
+    { title: "Mindfulness", description: "Complete a meditation or reflection habit.", challenge_type: "habits", target_value: 1, points_reward: 35 },
+    { title: "Fitness First", description: "Complete a workout habit early in the day.", challenge_type: "habits", target_value: 1, points_reward: 45 },
+    { title: "Double Trouble", description: "Complete 2 habits before lunch.", challenge_type: "habits", target_value: 2, points_reward: 50 },
+
+    // FINANCE (Money Moves)
+    { title: "Money Maker", description: "Log an income transaction today.", challenge_type: "income", target_value: 1, points_reward: 60 },
+    { title: "Expense Tracker", description: "Log 3 expense transactions. Track every cent!", challenge_type: "finance", target_value: 3, points_reward: 40 },
+    { title: "Savings Goal", description: "Add money to a Goal tracker.", challenge_type: "finance", target_value: 1, points_reward: 50 },
+    { title: "Budget Boss", description: "Review your finances and log a transaction.", challenge_type: "finance", target_value: 1, points_reward: 30 },
+    { title: "High Roller", description: "Log an income over $100.", challenge_type: "income", target_value: 1, points_reward: 100 },
+    { title: "Frugal Day", description: "Log 0 expenses today (Manual check).", challenge_type: "finance", target_value: 1, points_reward: 80 },
+    { title: "Investment", description: "Log an 'Investment' category transaction.", challenge_type: "finance", target_value: 1, points_reward: 70 },
+    { title: "Side Hustle", description: "Log income from a 'Side Hustle' category.", challenge_type: "income", target_value: 1, points_reward: 90 },
+    { title: "Audit", description: "Update a Transaction category or note.", challenge_type: "finance", target_value: 1, points_reward: 20 },
+    { title: "Goal Crusher", description: "Reach 50% on any financial goal.", challenge_type: "finance", target_value: 1, points_reward: 120 },
+
+    // LIFESTYLE & MISC
+    { title: "Early Riser", description: "Open the app before 8 AM.", challenge_type: "login", target_value: 1, points_reward: 30 },
+    { title: "Night Shift", description: "Log activity after 10 PM.", challenge_type: "login", target_value: 1, points_reward: 40 },
+    { title: "Weekend Prep", description: "Create 3 tasks on a Friday.", challenge_type: "planning", target_value: 3, points_reward: 45 },
+    { title: "Weekly Planner", description: "Create 5 tasks on a Monday.", challenge_type: "planning", target_value: 5, points_reward: 50 },
+    { title: "Social Butterfly", description: "Share an achievement (Mock).", challenge_type: "social", target_value: 1, points_reward: 30 },
+    { title: "Clean Slate", description: "Complete all overdue tasks.", challenge_type: "cleanup", target_value: 1, points_reward: 150 },
+    { title: "Idea Machine", description: "Create 3 new ideas in the backlog.", challenge_type: "creation", target_value: 3, points_reward: 45 },
+    { title: "Tag Master", description: "Add tags to 3 different tasks.", challenge_type: "organization", target_value: 3, points_reward: 30 },
+    { title: "Descriptionist", description: "Add detailed descriptions to 2 tasks.", challenge_type: "organization", target_value: 2, points_reward: 40 },
+    { title: "Full House", description: "Log a Task, a Habit, and a Transaction today.", challenge_type: "combo", target_value: 3, points_reward: 200 },
+];
+
 export async function getTodayChallenge(): Promise<DailyChallenge | null> {
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) return null;
+
     const today = new Date().toISOString().split('T')[0];
 
-    const { data, error } = await supabase
-        .from("daily_challenges")
-        .select("*")
-        .eq("date", today)
-        .eq("is_active", true)
-        .single();
+    try {
+        // 1. Check if user ALREADY has a challenge assigned for today
+        // We fetch the last few assignments and perform client-side matching to ensure robustness
+        const { data: recentUserChallenges } = await supabase
+            .from("user_challenges")
+            .select(`
+                *,
+                daily_challenges (*)
+            `)
+            .eq("user_id", userData.user.id)
+            .order("created_at", { ascending: false })
+            .limit(10);
 
-    if (error) {
-        console.error("Error fetching today's challenge:", error);
-        return null;
+        if (recentUserChallenges) {
+            for (const uc of recentUserChallenges) {
+                // @ts-ignore
+                const dc = uc.daily_challenges as DailyChallenge;
+                // Check if the linked daily challenge is for TODAY
+                if (dc && dc.date === today) {
+                    return dc;
+                }
+            }
+        }
+
+        // 2. Pick a random template
+        const randomIndex = Math.floor(Math.random() * CHALLENGE_TEMPLATES.length);
+        const template = CHALLENGE_TEMPLATES[randomIndex];
+
+        // 3. Try to getting ANY challenge for today (Global sync)
+        let dayChallenge: DailyChallenge | null = null;
+
+        // Check if this template instance exists
+        const { data: existingInstance } = await supabase
+            .from("daily_challenges")
+            .select("*")
+            .eq("date", today)
+            .eq("title", template.title)
+            .maybeSingle();
+
+        if (existingInstance) {
+            dayChallenge = existingInstance;
+        } else {
+            // Create it
+            const { data: created, error: insertError } = await supabase
+                .from("daily_challenges")
+                .insert({
+                    date: today,
+                    title: template.title,
+                    description: template.description,
+                    challenge_type: template.challenge_type,
+                    target_value: template.target_value,
+                    points_reward: template.points_reward,
+                })
+                .select()
+                .single();
+
+            if (insertError) {
+                if (insertError.code === '23505') { // Conflict
+                    const { data: retry } = await supabase
+                        .from("daily_challenges")
+                        .select("*")
+                        .eq("date", today)
+                        .eq("title", template.title)
+                        .maybeSingle();
+                    dayChallenge = retry;
+                }
+            } else {
+                dayChallenge = created;
+            }
+        }
+
+        // 4. Fallback: If creation failed (permissions/auth), try to get *ANY* challenge for today
+        if (!dayChallenge) {
+            const { data: anyChallenge } = await supabase
+                .from("daily_challenges")
+                .select("*")
+                .eq("date", today)
+                .limit(1)
+                .maybeSingle();
+            dayChallenge = anyChallenge;
+        }
+
+        // 5. Ultimate Fallback
+        if (!dayChallenge) {
+            console.warn("Using offline fallback challenge");
+            dayChallenge = {
+                id: 'fallback-id',
+                created_at: new Date().toISOString(),
+                date: today,
+                title: template.title,
+                description: template.description,
+                challenge_type: template.challenge_type,
+                target_value: template.target_value,
+                points_reward: template.points_reward,
+            } as DailyChallenge;
+            return dayChallenge;
+        }
+
+        // 6. Assign to user
+        if (dayChallenge.id !== 'fallback-id') {
+            const { error: assignError } = await supabase
+                .from("user_challenges")
+                .insert({
+                    user_id: userData.user.id,
+                    challenge_id: dayChallenge.id,
+                    current_progress: 0,
+                    is_completed: false
+                });
+
+            if (assignError && assignError.code !== '23505') {
+                console.error("Assign error", assignError);
+            }
+        }
+
+        return dayChallenge;
+
+    } catch (e) {
+        console.error("Unexpected error in getTodayChallenge:", e);
+        const randomIndex = Math.floor(Math.random() * CHALLENGE_TEMPLATES.length);
+        const template = CHALLENGE_TEMPLATES[randomIndex];
+        return {
+            id: 'error-fallback',
+            created_at: new Date().toISOString(),
+            date: today,
+            title: template.title,
+            description: template.description,
+            challenge_type: template.challenge_type,
+            target_value: template.target_value,
+            points_reward: template.points_reward,
+        } as DailyChallenge;
     }
-    return data;
 }
 
 export async function getUserChallengeProgress(challengeId: string): Promise<UserChallenge | null> {
@@ -917,6 +1168,86 @@ export async function completeDailyChallenge(challengeId: string): Promise<boole
     });
 
     return true;
+}
+
+// Helper to update challenge progress automatically
+export async function checkDailyChallengeProgress(
+    actionType: 'task_complete' | 'focus_session' | 'transaction' | 'habit_complete' | 'login',
+    value: number = 1,
+    metadata?: any
+) {
+    // 1. Get today's challenge
+    const challenge = await getTodayChallenge();
+    if (!challenge) return;
+
+    // 2. Get current progress
+    const userProgress = await getUserChallengeProgress(challenge.id);
+    if (!userProgress || userProgress.is_completed) return;
+
+    let shouldUpdate = false;
+    let increment = 0;
+
+    // 3. Check if action matches challenge type
+    switch (challenge.challenge_type) {
+        case 'tasks':
+        case 'early_task':
+        case 'cleanup':
+        case 'organization':
+            if (actionType === 'task_complete') {
+                shouldUpdate = true;
+                increment = 1;
+            }
+            break;
+        case 'focus':
+            if (actionType === 'focus_session') {
+                shouldUpdate = true;
+                increment = value;
+            }
+            break;
+        case 'finance':
+        case 'income':
+            if (actionType === 'transaction') {
+                if (challenge.challenge_type === 'income' && metadata?.type !== 'income') {
+                    shouldUpdate = false;
+                } else if (challenge.challenge_type === 'income' && metadata?.amount && challenge.target_value > 10 && metadata.amount < challenge.target_value) {
+                    // Special case for "Log income over $100" where target_value is actually the amount, not count
+                    // But usually target_value is COUNT (e.g. 1 income tx). 
+                    // Let's assume target_value is always Count for now unless we change schema.
+                    shouldUpdate = true;
+                    increment = 1;
+                } else {
+                    shouldUpdate = true;
+                    increment = 1;
+                }
+            }
+            break;
+        case 'habits':
+            if (actionType === 'habit_complete') {
+                shouldUpdate = true;
+                increment = 1;
+            }
+            break;
+        case 'combo':
+            if (['task_complete', 'habit_complete', 'transaction'].includes(actionType)) {
+                shouldUpdate = true;
+                increment = 1;
+            }
+            break;
+    }
+
+    // 4. Update if matched
+    if (shouldUpdate) {
+        // Safe increment
+        const current = userProgress.current_progress || 0;
+        const newProgress = current + increment;
+
+        await updateChallengeProgress(challenge.id, newProgress);
+
+        // 5. Complete if target reached
+        if (newProgress >= challenge.target_value) {
+            await completeDailyChallenge(challenge.id);
+        }
+    }
 }
 
 // =============================================
@@ -1357,3 +1688,300 @@ export async function getAnalyticsData(): Promise<AnalyticsData> {
         goalsCompletedThisMonth: completedGoals?.length || 0,
     };
 }
+
+// =============================================
+// TIME BLOCKING
+// =============================================
+
+import { TimeBlock, TimeBlockCategory } from "./database.types";
+
+export async function getTimeBlocks(date?: string, startDate?: string, endDate?: string): Promise<TimeBlock[]> {
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) return [];
+
+    let query = supabase
+        .from("time_blocks")
+        .select("*")
+        .eq("user_id", userData.user.id)
+        .order("start_time", { ascending: true });
+
+    if (date) {
+        // Get blocks for a specific date
+        const dayStart = new Date(date);
+        dayStart.setHours(0, 0, 0, 0);
+        const dayEnd = new Date(date);
+        dayEnd.setHours(23, 59, 59, 999);
+
+        query = query
+            .gte("start_time", dayStart.toISOString())
+            .lte("start_time", dayEnd.toISOString());
+    } else if (startDate && endDate) {
+        query = query
+            .gte("start_time", startDate)
+            .lte("start_time", endDate);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+        console.error("Error fetching time blocks:", error);
+        return [];
+    }
+    return data || [];
+}
+
+export async function getTimeBlocksForWeek(date: Date): Promise<TimeBlock[]> {
+    const startOfWeek = new Date(date);
+    const day = startOfWeek.getDay();
+    const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1); // Monday
+    startOfWeek.setDate(diff);
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(endOfWeek.getDate() + 6);
+    endOfWeek.setHours(23, 59, 59, 999);
+
+    return getTimeBlocks(undefined, startOfWeek.toISOString(), endOfWeek.toISOString());
+}
+
+export async function createTimeBlock(block: Partial<TimeBlock>): Promise<TimeBlock | null> {
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) return null;
+
+    const { data, error } = await supabase
+        .from("time_blocks")
+        .insert({
+            ...block,
+            user_id: userData.user.id,
+            is_completed: false,
+        })
+        .select()
+        .single();
+
+    if (error) {
+        console.error("Error creating time block:", error);
+        return null;
+    }
+
+    // Schedule reminder notification if reminder_minutes is set
+    if (data && data.reminder_minutes && data.reminder_minutes > 0) {
+        const reminderTime = new Date(data.start_time);
+        reminderTime.setMinutes(reminderTime.getMinutes() - data.reminder_minutes);
+
+        if (reminderTime > new Date()) {
+            await createNotification({
+                type: 'reminder',
+                title: '⏰ Upcoming Time Block',
+                message: `"${data.title}" starts in ${data.reminder_minutes} minutes`,
+                scheduled_for: reminderTime.toISOString(),
+                data: { time_block_id: data.id },
+            });
+        }
+    }
+
+    return data;
+}
+
+export async function updateTimeBlock(id: string, updates: Partial<TimeBlock>): Promise<TimeBlock | null> {
+    const { data, error } = await supabase
+        .from("time_blocks")
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq("id", id)
+        .select()
+        .single();
+
+    if (error) {
+        console.error("Error updating time block:", error);
+        return null;
+    }
+    return data;
+}
+
+export async function deleteTimeBlock(id: string): Promise<boolean> {
+    const { error } = await supabase
+        .from("time_blocks")
+        .delete()
+        .eq("id", id);
+
+    if (error) {
+        console.error("Error deleting time block:", error);
+        return false;
+    }
+    return true;
+}
+
+export async function completeTimeBlock(id: string): Promise<TimeBlock | null> {
+    const { data, error } = await supabase
+        .from("time_blocks")
+        .update({
+            is_completed: true,
+            completed_at: new Date().toISOString(),
+        })
+        .eq("id", id)
+        .select()
+        .single();
+
+    if (error) {
+        console.error("Error completing time block:", error);
+        return null;
+    }
+
+    if (data) {
+        // Calculate duration and add to focus time
+        const startTime = new Date(data.start_time);
+        const endTime = new Date(data.end_time);
+        const durationMinutes = Math.round((endTime.getTime() - startTime.getTime()) / 60000);
+
+        if (data.category === 'focus' || data.category === 'work') {
+            await updateDailyStats({ addFocusMinutes: durationMinutes });
+            await updateProfileStats({ addFocusMinutes: durationMinutes });
+        }
+
+        // Add points for completing time block
+        await updateProfileStats({ addScore: 5 });
+
+        await createNotification({
+            type: 'achievement',
+            title: '✅ Time Block Completed',
+            message: `Great job completing "${data.title}"!`,
+        });
+    }
+
+    return data;
+}
+
+export async function uncompleteTimeBlock(id: string): Promise<TimeBlock | null> {
+    const { data, error } = await supabase
+        .from("time_blocks")
+        .update({
+            is_completed: false,
+            completed_at: null,
+        })
+        .eq("id", id)
+        .select()
+        .single();
+
+    if (error) {
+        console.error("Error uncompleting time block:", error);
+        return null;
+    }
+    return data;
+}
+
+export async function getTodayTimeBlockStats(): Promise<{
+    totalBlocks: number;
+    completedBlocks: number;
+    totalMinutes: number;
+    completedMinutes: number;
+}> {
+    const today = new Date().toISOString().split('T')[0];
+    const blocks = await getTimeBlocks(today);
+
+    let totalMinutes = 0;
+    let completedMinutes = 0;
+
+    blocks.forEach(block => {
+        const start = new Date(block.start_time);
+        const end = new Date(block.end_time);
+        const duration = Math.round((end.getTime() - start.getTime()) / 60000);
+        totalMinutes += duration;
+        if (block.is_completed) {
+            completedMinutes += duration;
+        }
+    });
+
+    return {
+        totalBlocks: blocks.length,
+        completedBlocks: blocks.filter(b => b.is_completed).length,
+        totalMinutes,
+        completedMinutes,
+    };
+}
+
+export async function getUpcomingTimeBlocks(limit = 5): Promise<TimeBlock[]> {
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) return [];
+
+    const now = new Date().toISOString();
+
+    const { data, error } = await supabase
+        .from("time_blocks")
+        .select("*")
+        .eq("user_id", userData.user.id)
+        .eq("is_completed", false)
+        .gte("start_time", now)
+        .order("start_time", { ascending: true })
+        .limit(limit);
+
+    if (error) {
+        console.error("Error fetching upcoming time blocks:", error);
+        return [];
+    }
+    return data || [];
+}
+
+export async function getCurrentTimeBlock(): Promise<TimeBlock | null> {
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) return null;
+
+    const now = new Date().toISOString();
+
+    const { data, error } = await supabase
+        .from("time_blocks")
+        .select("*")
+        .eq("user_id", userData.user.id)
+        .lte("start_time", now)
+        .gte("end_time", now)
+        .single();
+
+    if (error && error.code !== 'PGRST116') {
+        console.error("Error fetching current time block:", error);
+    }
+    return data;
+}
+
+// Get all time blocks that need reminders to be sent
+export async function checkAndSendTimeBlockReminders(): Promise<void> {
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) return;
+
+    const now = new Date();
+    const thirtyMinutesFromNow = new Date(now.getTime() + 30 * 60 * 1000);
+
+    const { data: upcomingBlocks } = await supabase
+        .from("time_blocks")
+        .select("*")
+        .eq("user_id", userData.user.id)
+        .eq("is_completed", false)
+        .gte("start_time", now.toISOString())
+        .lte("start_time", thirtyMinutesFromNow.toISOString());
+
+    if (!upcomingBlocks) return;
+
+    for (const block of upcomingBlocks) {
+        const startTime = new Date(block.start_time);
+        const reminderTime = new Date(startTime.getTime() - block.reminder_minutes * 60 * 1000);
+
+        // If reminder time is within 1 minute of now, send notification
+        const timeDiff = Math.abs(now.getTime() - reminderTime.getTime());
+        if (timeDiff < 60 * 1000) {
+            await createNotification({
+                type: 'reminder',
+                title: '⏰ Upcoming Time Block',
+                message: `"${block.title}" starts in ${block.reminder_minutes} minutes`,
+                data: { time_block_id: block.id },
+            });
+        }
+    }
+}
+
+// Time block categories with colors
+export const TIME_BLOCK_CATEGORIES: Record<TimeBlockCategory, { label: string; color: string; icon: string }> = {
+    work: { label: 'Work', color: '#F5A623', icon: '💼' },
+    personal: { label: 'Personal', color: '#8B5CF6', icon: '🏠' },
+    meeting: { label: 'Meeting', color: '#3B82F6', icon: '👥' },
+    break: { label: 'Break', color: '#10B981', icon: '☕' },
+    focus: { label: 'Deep Focus', color: '#EF4444', icon: '🎯' },
+    other: { label: 'Other', color: '#6B7280', icon: '📌' },
+};
+

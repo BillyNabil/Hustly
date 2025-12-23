@@ -38,13 +38,13 @@ function FloatingMusicButton() {
                         <Music className="w-6 h-6 text-black" />
 
                         {/* Pulse ring effect */}
-                        <span className="absolute inset-0 rounded-full bg-primary/30 animate-ping" style={{ animationDuration: "2s" }} />
+                        <span className="absolute inset-0 rounded-full bg-primary/40 animate-ping" style={{ animationDuration: "3s" }} />
 
                         {/* Tooltip */}
-                        <span className="absolute right-full mr-3 px-3 py-1.5 bg-card/95 backdrop-blur-xl border border-primary/20 rounded-lg text-sm text-white whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none"
+                        <span className="absolute right-full mr-3 px-3 py-1.5 bg-black/80 backdrop-blur-xl border border-white/10 rounded-lg text-sm text-white whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none shadow-lg"
                             style={{ transition: "opacity 0.15s" }}
                         >
-                            🎵 Focus Mode
+                            🎧 Sonic Focus
                         </span>
                     </motion.button>
                 )}

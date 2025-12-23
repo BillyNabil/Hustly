@@ -7,6 +7,8 @@ const outfit = Outfit({
     subsets: ["latin"],
     variable: "--font-outfit",
     display: "swap",
+    preload: true,
+    adjustFontFallback: true, // Reduces layout shift from font loading
 });
 
 export const viewport: Viewport = {

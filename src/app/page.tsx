@@ -1,7 +1,8 @@
 "use client";
 
-import { memo, useMemo, useState, useEffect } from "react";
+import { memo, useMemo, useState, useEffect, Suspense } from "react";
 import { motion } from "framer-motion";
+import dynamic from "next/dynamic";
 import {
     TrendingUp,
     DollarSign,
@@ -17,12 +18,19 @@ import {
     Loader2,
 } from "lucide-react";
 import Link from "next/link";
-import Leaderboard from "@/components/Leaderboard";
 import { fadeUp, staggerContainer, transitions } from "@/lib/animations";
 import { useLanguage } from "@/lib/language-context";
 import { useAuth } from "@/lib/auth-context";
 import { getDashboardStats, getRecentTasks, DashboardStats } from "@/lib/supabase-service";
 import { Idea } from "@/lib/database.types";
+import { ModernBackground } from "@/components/ModernBackground";
+import DashboardVisualizer from "@/components/DashboardVisualizer";
+
+// Only lazy-load non-critical below-the-fold component
+const Leaderboard = dynamic(() => import("@/components/Leaderboard"), {
+    loading: () => <div className="glass-panel rounded-2xl border border-primary/10 p-6 h-64 animate-pulse bg-white/5" />,
+    ssr: false
+});
 
 export default function Home() {
     const { t, language } = useLanguage();
@@ -58,6 +66,7 @@ export default function Home() {
                     setStats({
                         productivityScore: 0,
                         monthlyIncome: 0,
+                        monthlyExpense: 0,
                         hustleLevel: "Newbie Hustler",
                         tasksCompleted: 0,
                         focusHours: 0,
@@ -69,6 +78,7 @@ export default function Home() {
                 setStats({
                     productivityScore: 0,
                     monthlyIncome: 0,
+                    monthlyExpense: 0,
                     hustleLevel: "Newbie Hustler",
                     tasksCompleted: 0,
                     focusHours: 0,
@@ -88,38 +98,47 @@ export default function Home() {
     type Opportunity = { id: number; title: string; source: string; budget: string; match: string; keyword: string };
     const opportunities = useMemo<Opportunity[]>(() => [], []);
 
-    // Show loading state
-    if (loading || !stats) {
-        return (
-            <div className="h-full flex items-center justify-center">
-                <div className="flex flex-col items-center gap-4">
-                    <Loader2 className="w-8 h-8 text-primary animate-spin" />
-                    <p className="text-muted-foreground">Loading dashboard...</p>
-                </div>
-            </div>
-        );
-    }
+    // Non-blocking render approach for better LCP
+    // We render the layout immediately and show skeletons/default values while loading
+    const showSkeleton = loading || !stats;
+
+    // Default empty stats if loading (Visualizer handles nulls gracefully)
+    const displayStats = stats || {
+        productivityScore: 0,
+        monthlyIncome: 0,
+        monthlyExpense: 0,
+        hustleLevel: "Loading...",
+        tasksCompleted: 0,
+        focusHours: 0,
+        activeGoals: 0,
+    };
 
     return (
-        <div className="p-4 md:p-8 relative min-h-full overflow-y-auto">
-            {/* Background Gradients */}
-            <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-[120px]" />
-                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-accent/5 rounded-full blur-[120px]" />
-            </div>
+        <div className="relative min-h-full overflow-y-auto overflow-x-hidden">
+            {/* Background */}
+            <ModernBackground className="fixed inset-0 z-0 opacity-60 pointer-events-none" />
+            <div className="fixed inset-0 z-0 bg-background/50 pointer-events-none backdrop-blur-[1px]" />
 
-            <div className="relative z-10 max-w-6xl mx-auto space-y-6">
-                {/* Header */}
-                <motion.header
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={transitions.normal}
-                >
-                    <h1 className="text-2xl md:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent">
-                        {t.dashboard.welcome} {profile?.full_name || user?.email?.split("@")[0] || t.dashboard.hustler}.
-                    </h1>
-                    <p className="text-muted-foreground mt-1">{t.dashboard.empireWaiting}</p>
-                </motion.header>
+            <div className="relative z-10 max-w-7xl mx-auto p-4 md:p-8 space-y-8">
+
+                {/* Visualizer */}
+                <DashboardVisualizer stats={displayStats} />
+
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <h1 className="text-2xl font-bold text-white">
+                            Welcome back, <span className="text-primary">{profile?.full_name || user?.email?.split("@")[0] || t.dashboard.hustler}</span>
+                        </h1>
+                        <p className="text-muted-foreground">{t.dashboard.empireWaiting}</p>
+                    </div>
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 self-start md:self-auto">
+                        <span className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                        </span>
+                        <span className="text-xs font-medium text-primary">System Online</span>
+                    </div>
+                </div>
 
                 {/* Stats Grid - Using stagger for smooth sequential animation */}
                 <motion.div
@@ -138,7 +157,7 @@ export default function Home() {
                             </div>
                             <span className="text-xs text-muted-foreground uppercase tracking-wider">{t.dashboard.score}</span>
                         </div>
-                        <p className="text-2xl font-bold text-white">{stats.productivityScore}</p>
+                        <p className="text-2xl font-bold text-white">{displayStats.productivityScore}</p>
                         <p className="text-xs text-muted-foreground mt-1">{t.dashboard.thisWeek}</p>
                     </motion.div>
 
@@ -152,7 +171,7 @@ export default function Home() {
                             </div>
                             <span className="text-xs text-muted-foreground uppercase tracking-wider">{t.dashboard.income}</span>
                         </div>
-                        <p className="text-2xl font-bold text-white">${stats.monthlyIncome.toLocaleString()}</p>
+                        <p className="text-2xl font-bold text-white">${displayStats.monthlyIncome.toLocaleString()}</p>
                         <p className="text-xs text-muted-foreground mt-1">{t.dashboard.thisMonth}</p>
                     </motion.div>
 
@@ -166,7 +185,7 @@ export default function Home() {
                             </div>
                             <span className="text-xs text-muted-foreground uppercase tracking-wider">{t.dashboard.focus}</span>
                         </div>
-                        <p className="text-2xl font-bold text-white">{stats.focusHours}h</p>
+                        <p className="text-2xl font-bold text-white">{displayStats.focusHours}h</p>
                         <p className="text-xs text-purple-400 font-medium mt-1">{t.dashboard.thisMonth}</p>
                     </motion.div>
 
@@ -180,8 +199,8 @@ export default function Home() {
                             </div>
                             <span className="text-xs text-muted-foreground uppercase tracking-wider">{t.dashboard.level}</span>
                         </div>
-                        <p className="text-lg font-bold text-gradient-gold">{stats.hustleLevel}</p>
-                        <p className="text-xs text-muted-foreground mt-1">{stats.tasksCompleted} tasks completed</p>
+                        <p className="text-lg font-bold text-gradient-gold">{displayStats.hustleLevel}</p>
+                        <p className="text-xs text-muted-foreground mt-1">{displayStats.tasksCompleted} tasks completed</p>
                     </motion.div>
                 </motion.div>
 

@@ -31,6 +31,7 @@ export const translations = {
       analytics: "Analytics",
       goals: "Weekly Goals",
       challenges: "Challenges",
+      schedule: "Time Blocking",
     },
 
     // Dashboard
@@ -187,6 +188,7 @@ export const translations = {
       analytics: "Analitik",
       goals: "Goals Mingguan",
       challenges: "Tantangan",
+      schedule: "Time Blocking",
     },
 
     // Dashboard

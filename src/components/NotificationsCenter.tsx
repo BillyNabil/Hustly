@@ -8,17 +8,16 @@ import {
     Check,
     CheckCheck,
     Trophy,
-    Calendar,
+    Clock,
     Target,
     Sunrise,
     AlertCircle,
     Zap,
     X,
-    Clock,
-    Trash2,
+    Inbox,
+    Sparkles,
 } from "lucide-react";
 import { Notification } from "@/lib/database.types";
-import { transitions, fadeUp, staggerContainer, scaleIn } from "@/lib/animations";
 import {
     getNotifications,
     getUnreadNotificationCount,
@@ -33,26 +32,27 @@ const notificationIcons: Record<string, typeof Bell> = {
     deadline: AlertCircle,
     briefing: Sunrise,
     challenge: Target,
-    system: Bell,
+    system: Zap,
 };
 
-const notificationColors: Record<string, string> = {
-    reminder: "bg-blue-500",
-    achievement: "bg-amber-500",
-    deadline: "bg-red-500",
-    briefing: "bg-orange-500",
-    challenge: "bg-purple-500",
-    system: "bg-slate-500",
+const notificationAccents: Record<string, { bg: string; text: string; border: string }> = {
+    reminder: { bg: "bg-sky-500/10", text: "text-sky-400", border: "border-sky-500/20" },
+    achievement: { bg: "bg-amber-500/10", text: "text-amber-400", border: "border-amber-500/20" },
+    deadline: { bg: "bg-rose-500/10", text: "text-rose-400", border: "border-rose-500/20" },
+    briefing: { bg: "bg-orange-500/10", text: "text-orange-400", border: "border-orange-500/20" },
+    challenge: { bg: "bg-violet-500/10", text: "text-violet-400", border: "border-violet-500/20" },
+    system: { bg: "bg-emerald-500/10", text: "text-emerald-400", border: "border-emerald-500/20" },
 };
 
 interface NotificationItemProps {
     notification: Notification;
     onMarkAsRead: (id: string) => void;
+    index: number;
 }
 
-const NotificationItem = memo(function NotificationItem({ notification, onMarkAsRead }: NotificationItemProps) {
-    const Icon = notificationIcons[notification.type] || Bell;
-    const bgColor = notificationColors[notification.type] || notificationColors.system;
+const NotificationItem = memo(function NotificationItem({ notification, onMarkAsRead, index }: NotificationItemProps) {
+    const Icon = notificationIcons[notification.type] || Zap;
+    const accent = notificationAccents[notification.type] || notificationAccents.system;
 
     const timeAgo = (date: string) => {
         const now = new Date();
@@ -60,183 +60,236 @@ const NotificationItem = memo(function NotificationItem({ notification, onMarkAs
         const seconds = Math.floor((now.getTime() - then.getTime()) / 1000);
 
         if (seconds < 60) return "Just now";
-        if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-        if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
-        if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
-        return then.toLocaleDateString();
+        if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
+        if (seconds < 86400) return `${Math.floor(seconds / 3600)}h`;
+        if (seconds < 604800) return `${Math.floor(seconds / 86400)}d`;
+        return then.toLocaleDateString("en-US", { month: "short", day: "numeric" });
     };
 
     return (
         <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, x: -50, scale: 0.9 }}
+            transition={{ duration: 0.3, delay: index * 0.05, ease: [0.4, 0, 0.2, 1] }}
             layout
-            variants={fadeUp}
-            initial="hidden"
-            animate="visible"
-            exit="hidden"
-            className={`p-4 rounded-xl border transition-all ${notification.is_read
-                    ? "bg-card/50 border-border"
-                    : "bg-card border-primary/30 shadow-sm"
+            className={`group relative overflow-hidden rounded-2xl border backdrop-blur-sm transition-all duration-300 ${notification.is_read
+                    ? "bg-card/30 border-white/5 hover:border-white/10"
+                    : `${accent.bg} ${accent.border} hover:shadow-lg`
                 }`}
         >
-            <div className="flex items-start gap-3">
-                {/* Icon */}
-                <div className={`p-2.5 rounded-xl ${bgColor}`}>
-                    <Icon size={18} className="text-white" />
+            {/* Animated gradient overlay for unread */}
+            {!notification.is_read && (
+                <motion.div
+                    className={`absolute inset-0 opacity-20 bg-gradient-to-r from-transparent via-white to-transparent`}
+                    initial={{ x: "-100%" }}
+                    animate={{ x: "200%" }}
+                    transition={{ duration: 2, repeat: Infinity, repeatDelay: 3, ease: "linear" }}
+                />
+            )}
+
+            <div className="relative p-4 flex items-start gap-4">
+                {/* Icon with pulse effect */}
+                <div className="relative flex-shrink-0">
+                    <div className={`p-2.5 rounded-xl ${accent.bg} ${accent.border} border`}>
+                        <Icon size={18} className={accent.text} />
+                    </div>
+                    {!notification.is_read && (
+                        <motion.div
+                            className={`absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full ${accent.text.replace('text-', 'bg-')}`}
+                            animate={{ scale: [1, 1.2, 1] }}
+                            transition={{ duration: 2, repeat: Infinity }}
+                        />
+                    )}
                 </div>
 
                 {/* Content */}
                 <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                        <h4 className={`font-semibold text-sm ${notification.is_read ? "text-muted-foreground" : "text-foreground"
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                        <h4 className={`font-semibold text-sm truncate ${notification.is_read ? "text-muted-foreground" : "text-foreground"
                             }`}>
                             {notification.title}
                         </h4>
-                        {!notification.is_read && (
-                            <span className="w-2 h-2 bg-primary rounded-full" />
-                        )}
+                        <span className="text-[10px] text-muted-foreground/60 uppercase tracking-wider flex-shrink-0">
+                            {timeAgo(notification.created_at)}
+                        </span>
                     </div>
-                    <p className={`text-sm whitespace-pre-line ${notification.is_read ? "text-muted-foreground/70" : "text-muted-foreground"
+                    <p className={`text-sm leading-relaxed ${notification.is_read ? "text-muted-foreground/50" : "text-muted-foreground"
                         }`}>
                         {notification.message}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-2">
-                        {timeAgo(notification.created_at)}
                     </p>
                 </div>
 
                 {/* Mark as read button */}
                 {!notification.is_read && (
-                    <button
+                    <motion.button
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
                         onClick={() => onMarkAsRead(notification.id)}
-                        className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                        className={`flex-shrink-0 p-2 rounded-lg transition-colors ${accent.bg} hover:bg-white/10`}
                         title="Mark as read"
                     >
-                        <Check size={16} />
-                    </button>
+                        <Check size={14} className={accent.text} />
+                    </motion.button>
                 )}
             </div>
         </motion.div>
     );
 });
 
-interface NotificationBellProps {
-    count: number;
-    onClick: () => void;
-}
-
-export const NotificationBell = memo(function NotificationBell({ count, onClick }: NotificationBellProps) {
+// Visual Header Component with animated graphics
+const NotificationHeader = memo(function NotificationHeader({
+    unreadCount,
+    onMarkAllAsRead,
+    onGenerateBriefing,
+}: {
+    unreadCount: number;
+    onMarkAllAsRead: () => void;
+    onGenerateBriefing: () => void;
+}) {
     return (
-        <button
-            onClick={onClick}
-            className="relative p-2.5 bg-card border border-border rounded-xl hover:border-primary/30 transition-colors"
-        >
-            {count > 0 ? (
-                <BellRing size={20} className="text-foreground animate-pulse" />
-            ) : (
-                <Bell size={20} className="text-muted-foreground" />
-            )}
-            {count > 0 && (
-                <motion.span
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center"
-                >
-                    {count > 9 ? "9+" : count}
-                </motion.span>
-            )}
-        </button>
+        <div className="relative overflow-hidden rounded-3xl border border-white/5 bg-gradient-to-br from-card via-card to-card/50 mb-8">
+            {/* Animated background particles */}
+            <div className="absolute inset-0 overflow-hidden">
+                {[...Array(5)].map((_, i) => (
+                    <motion.div
+                        key={i}
+                        className="absolute w-1 h-1 bg-primary/30 rounded-full"
+                        style={{
+                            left: `${20 + i * 15}%`,
+                            top: `${30 + (i % 3) * 20}%`,
+                        }}
+                        animate={{
+                            y: [0, -20, 0],
+                            opacity: [0.3, 0.8, 0.3],
+                        }}
+                        transition={{
+                            duration: 3 + i * 0.5,
+                            repeat: Infinity,
+                            delay: i * 0.3,
+                        }}
+                    />
+                ))}
+            </div>
+
+            {/* Gradient orb */}
+            <motion.div
+                className="absolute -right-20 -top-20 w-64 h-64 bg-primary/5 rounded-full blur-3xl"
+                animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.5, 0.3] }}
+                transition={{ duration: 4, repeat: Infinity }}
+            />
+
+            <div className="relative p-6 md:p-8">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    {/* Title Section */}
+                    <div className="flex items-center gap-4">
+                        <motion.div
+                            className="relative"
+                            whileHover={{ rotate: [0, -10, 10, 0] }}
+                            transition={{ duration: 0.5 }}
+                        >
+                            <div className="p-3 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20">
+                                <Bell size={28} className="text-primary" />
+                            </div>
+                            {unreadCount > 0 && (
+                                <motion.span
+                                    initial={{ scale: 0 }}
+                                    animate={{ scale: 1 }}
+                                    className="absolute -top-1 -right-1 w-6 h-6 bg-rose-500 text-white text-xs font-bold rounded-full flex items-center justify-center shadow-lg"
+                                >
+                                    {unreadCount > 9 ? "9+" : unreadCount}
+                                </motion.span>
+                            )}
+                        </motion.div>
+                        <div>
+                            <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">
+                                Inbox
+                            </h1>
+                            <p className="text-muted-foreground text-sm mt-0.5">
+                                {unreadCount > 0 ? (
+                                    <span className="flex items-center gap-1.5">
+                                        <Sparkles size={12} className="text-primary" />
+                                        {unreadCount} new update{unreadCount > 1 ? "s" : ""} waiting
+                                    </span>
+                                ) : (
+                                    "You're all caught up"
+                                )}
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex items-center gap-2">
+                        <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={onGenerateBriefing}
+                            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-orange-500/10 text-orange-400 border border-orange-500/20 font-medium text-sm hover:bg-orange-500/20 transition-colors"
+                        >
+                            <Sunrise size={16} />
+                            <span className="hidden sm:inline">Daily Brief</span>
+                        </motion.button>
+                        {unreadCount > 0 && (
+                            <motion.button
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                onClick={onMarkAllAsRead}
+                                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary/10 text-primary border border-primary/20 font-medium text-sm hover:bg-primary/20 transition-colors"
+                            >
+                                <CheckCheck size={16} />
+                                <span className="hidden sm:inline">Clear All</span>
+                            </motion.button>
+                        )}
+                    </div>
+                </div>
+            </div>
+        </div>
     );
 });
 
-interface NotificationDropdownProps {
-    isOpen: boolean;
-    onClose: () => void;
-    notifications: Notification[];
-    onMarkAsRead: (id: string) => void;
-    onMarkAllAsRead: () => void;
-}
-
-export const NotificationDropdown = memo(function NotificationDropdown({
-    isOpen,
-    onClose,
-    notifications,
-    onMarkAsRead,
-    onMarkAllAsRead,
-}: NotificationDropdownProps) {
-    if (!isOpen) return null;
-
-    const unreadCount = notifications.filter(n => !n.is_read).length;
-
+// Empty State Component
+const EmptyState = memo(function EmptyState({ filter }: { filter: "all" | "unread" }) {
     return (
-        <>
-            {/* Backdrop */}
-            <div
-                className="fixed inset-0 z-40"
-                onClick={onClose}
-            />
+        <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+            className="relative overflow-hidden rounded-3xl border border-white/5 bg-gradient-to-br from-card to-card/30 p-12 text-center"
+        >
+            {/* Animated rings */}
+            <div className="absolute inset-0 flex items-center justify-center">
+                <motion.div
+                    className="w-48 h-48 border border-primary/10 rounded-full"
+                    animate={{ scale: [1, 1.5], opacity: [0.5, 0] }}
+                    transition={{ duration: 3, repeat: Infinity }}
+                />
+                <motion.div
+                    className="absolute w-48 h-48 border border-primary/10 rounded-full"
+                    animate={{ scale: [1, 1.5], opacity: [0.5, 0] }}
+                    transition={{ duration: 3, repeat: Infinity, delay: 1 }}
+                />
+            </div>
 
-            {/* Dropdown */}
-            <motion.div
-                initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                className="absolute right-0 top-full mt-2 w-80 md:w-96 max-h-[70vh] overflow-hidden bg-card border border-border rounded-2xl shadow-2xl z-50"
-            >
-                {/* Header */}
-                <div className="p-4 border-b border-border flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <Bell size={18} className="text-primary" />
-                        <h3 className="font-semibold text-foreground">Notifications</h3>
-                        {unreadCount > 0 && (
-                            <span className="px-2 py-0.5 bg-primary/10 text-primary text-xs font-medium rounded-full">
-                                {unreadCount} new
-                            </span>
-                        )}
-                    </div>
-                    <div className="flex items-center gap-1">
-                        {unreadCount > 0 && (
-                            <button
-                                onClick={onMarkAllAsRead}
-                                className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
-                                title="Mark all as read"
-                            >
-                                <CheckCheck size={16} />
-                            </button>
-                        )}
-                        <button
-                            onClick={onClose}
-                            className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
-                        >
-                            <X size={16} />
-                        </button>
-                    </div>
-                </div>
-
-                {/* Notifications list */}
-                <div className="max-h-[50vh] overflow-y-auto p-3 space-y-2">
-                    <AnimatePresence mode="popLayout">
-                        {notifications.length === 0 ? (
-                            <motion.div
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                className="text-center py-8"
-                            >
-                                <Bell size={32} className="mx-auto text-muted-foreground mb-2" />
-                                <p className="text-muted-foreground text-sm">No notifications yet</p>
-                            </motion.div>
-                        ) : (
-                            notifications.map((notification) => (
-                                <NotificationItem
-                                    key={notification.id}
-                                    notification={notification}
-                                    onMarkAsRead={onMarkAsRead}
-                                />
-                            ))
-                        )}
-                    </AnimatePresence>
-                </div>
-            </motion.div>
-        </>
+            <div className="relative z-10">
+                <motion.div
+                    className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 flex items-center justify-center"
+                    animate={{ y: [0, -5, 0] }}
+                    transition={{ duration: 3, repeat: Infinity }}
+                >
+                    <Inbox size={36} className="text-primary/60" />
+                </motion.div>
+                <h3 className="text-xl font-semibold text-foreground mb-2">
+                    {filter === "unread" ? "All Clear" : "No Activity Yet"}
+                </h3>
+                <p className="text-muted-foreground max-w-xs mx-auto">
+                    {filter === "unread"
+                        ? "Nice work! You've handled everything."
+                        : "Start using the app and updates will appear here."}
+                </p>
+            </div>
+        </motion.div>
     );
 });
 
@@ -277,100 +330,53 @@ export default function NotificationsCenter() {
     const unreadCount = notifications.filter(n => !n.is_read).length;
 
     return (
-        <div className="space-y-6">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-                        <Bell className="text-primary" />
-                        Notifications
-                    </h1>
-                    <p className="text-muted-foreground">
-                        {unreadCount > 0 ? `${unreadCount} unread` : "All caught up!"}
-                    </p>
-                </div>
-                <div className="flex items-center gap-2">
-                    <button
-                        onClick={handleGenerateBriefing}
-                        className="flex items-center gap-2 px-4 py-2 bg-orange-500/10 text-orange-500 rounded-xl font-medium hover:bg-orange-500/20 transition-colors"
-                    >
-                        <Sunrise size={18} />
-                        <span className="hidden sm:inline">Morning Briefing</span>
-                    </button>
-                    {unreadCount > 0 && (
-                        <button
-                            onClick={handleMarkAllAsRead}
-                            className="flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-xl font-medium hover:bg-primary/20 transition-colors"
-                        >
-                            <CheckCheck size={18} />
-                            <span className="hidden sm:inline">Mark all read</span>
-                        </button>
-                    )}
-                </div>
-            </div>
+        <div className="max-w-3xl mx-auto">
+            {/* Header with Visual */}
+            <NotificationHeader
+                unreadCount={unreadCount}
+                onMarkAllAsRead={handleMarkAllAsRead}
+                onGenerateBriefing={handleGenerateBriefing}
+            />
 
-            {/* Filters */}
-            <div className="flex gap-2">
-                <button
-                    onClick={() => setFilter("all")}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === "all"
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted text-muted-foreground hover:text-foreground"
-                        }`}
-                >
-                    All
-                </button>
-                <button
-                    onClick={() => setFilter("unread")}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === "unread"
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted text-muted-foreground hover:text-foreground"
-                        }`}
-                >
-                    Unread
-                </button>
+            {/* Filter Tabs */}
+            <div className="flex gap-1 p-1 bg-muted/30 rounded-xl mb-6 w-fit">
+                {(["all", "unread"] as const).map((tab) => (
+                    <button
+                        key={tab}
+                        onClick={() => setFilter(tab)}
+                        className={`px-5 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${filter === tab
+                                ? "bg-card text-foreground shadow-sm"
+                                : "text-muted-foreground hover:text-foreground"
+                            }`}
+                    >
+                        {tab === "all" ? "All" : "Unread"}
+                    </button>
+                ))}
             </div>
 
             {/* Notifications List */}
             {isLoading ? (
-                <div className="flex items-center justify-center py-12">
-                    <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
+                <div className="flex flex-col items-center justify-center py-20 gap-3">
+                    <motion.div
+                        className="w-10 h-10 border-2 border-primary/30 border-t-primary rounded-full"
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    />
+                    <p className="text-sm text-muted-foreground">Loading...</p>
                 </div>
+            ) : notifications.length === 0 ? (
+                <EmptyState filter={filter} />
             ) : (
-                <motion.div
-                    variants={staggerContainer}
-                    initial="hidden"
-                    animate="visible"
-                    className="space-y-3"
-                >
+                <motion.div className="space-y-3">
                     <AnimatePresence mode="popLayout">
-                        {notifications.length === 0 ? (
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className="text-center py-12 px-4 bg-card border border-border rounded-2xl"
-                            >
-                                <div className="w-16 h-16 mx-auto mb-4 bg-primary/10 rounded-full flex items-center justify-center">
-                                    <Bell size={32} className="text-primary" />
-                                </div>
-                                <h3 className="text-lg font-semibold text-foreground mb-2">
-                                    {filter === "unread" ? "No unread notifications" : "No notifications yet"}
-                                </h3>
-                                <p className="text-muted-foreground">
-                                    {filter === "unread"
-                                        ? "You're all caught up!"
-                                        : "Notifications will appear here as you use the app."}
-                                </p>
-                            </motion.div>
-                        ) : (
-                            notifications.map((notification) => (
-                                <NotificationItem
-                                    key={notification.id}
-                                    notification={notification}
-                                    onMarkAsRead={handleMarkAsRead}
-                                />
-                            ))
-                        )}
+                        {notifications.map((notification, index) => (
+                            <NotificationItem
+                                key={notification.id}
+                                notification={notification}
+                                onMarkAsRead={handleMarkAsRead}
+                                index={index}
+                            />
+                        ))}
                     </AnimatePresence>
                 </motion.div>
             )}

@@ -59,76 +59,102 @@ const DailyChallengeCard = memo(function DailyChallengeCard({
             variants={fadeUp}
             initial="hidden"
             animate="visible"
-            className={`relative p-6 rounded-2xl border overflow-hidden ${isCompleted
-                    ? "bg-gradient-to-br from-amber-500/10 to-orange-500/10 border-amber-500/30"
-                    : "bg-gradient-to-br from-primary/5 to-primary/10 border-primary/30"
+            layout
+            className={`relative p-6 rounded-2xl border overflow-hidden transition-all duration-500 group ${isCompleted
+                ? "bg-gradient-to-br from-amber-500/10 to-orange-500/10 border-amber-500/30 shadow-[0_0_30px_rgba(245,158,11,0.2)]"
+                : "bg-gradient-to-br from-primary/5 to-primary/10 border-primary/30 hover:border-primary/50"
                 }`}
         >
             {/* Background pattern */}
-            <div className="absolute inset-0 opacity-5">
+            <div className="absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary rounded-full blur-3xl" />
                 <div className="absolute bottom-0 left-0 w-24 h-24 bg-amber-500 rounded-full blur-3xl" />
             </div>
+
+            {/* Celebration Confetti when completed */}
+            {isCompleted && (
+                <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                    {[...Array(10)].map((_, i) => (
+                        <motion.div
+                            key={i}
+                            className="absolute w-1 h-1 bg-amber-400 rounded-full"
+                            initial={{ y: -10, x: Math.random() * 300, opacity: 1 }}
+                            animate={{ y: 200, rotate: 360, opacity: 0 }}
+                            transition={{ duration: 4 + Math.random(), repeat: Infinity, delay: Math.random() }}
+                        />
+                    ))}
+                </div>
+            )}
 
             {/* Completed badge */}
             {isCompleted && (
                 <motion.div
                     initial={{ scale: 0, rotate: -12 }}
                     animate={{ scale: 1, rotate: 0 }}
-                    className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 text-white text-sm font-bold rounded-full shadow-lg"
+                    transition={{ type: "spring", stiffness: 200, damping: 10 }}
+                    className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-sm font-bold rounded-full shadow-lg z-10"
                 >
-                    <Trophy size={16} />
+                    <Trophy size={16} className="fill-white/20" />
                     Completed!
                 </motion.div>
             )}
 
-            <div className="relative">
+            <div className="relative z-10">
                 {/* Header */}
                 <div className="flex items-center gap-3 mb-4">
-                    <div className={`p-3 rounded-xl ${isCompleted ? "bg-amber-500" : "bg-primary"}`}>
-                        <Zap size={24} className="text-white" />
-                    </div>
+                    <motion.div
+                        whileHover={{ rotate: 15, scale: 1.1 }}
+                        className={`p-3 rounded-xl shadow-inner ${isCompleted ? "bg-amber-500" : "bg-primary"}`}
+                    >
+                        <Zap size={24} className="text-white fill-white/20" />
+                    </motion.div>
                     <div>
-                        <p className="text-sm text-muted-foreground">Today&apos;s Challenge</p>
+                        <p className="text-sm text-muted-foreground font-medium uppercase tracking-wider">Today&apos;s Challenge</p>
                         <h3 className="text-xl font-bold text-foreground">{challenge.title}</h3>
                     </div>
                 </div>
 
                 {/* Description */}
-                <p className="text-muted-foreground mb-6">{challenge.description}</p>
+                <p className="text-muted-foreground mb-6 leading-relaxed bg-black/20 p-3 rounded-lg border border-white/5">{challenge.description}</p>
 
                 {/* Progress */}
                 <div className="space-y-3">
                     <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Progress</span>
-                        <span className="font-bold text-foreground">
+                        <span className="text-muted-foreground font-medium">Progress</span>
+                        <span className="font-bold text-foreground font-mono">
                             {localProgress} / {challenge.target_value}
                         </span>
                     </div>
-                    <div className="h-3 bg-muted rounded-full overflow-hidden">
+                    <div className="h-4 bg-black/40 rounded-full overflow-hidden border border-white/5 relative">
+                        {/* Striped progress bar pattern */}
+                        <div className="absolute inset-0 opacity-10 w-full h-full" style={{ backgroundImage: 'linear-gradient(45deg,rgba(255,255,255,.15) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.15) 50%,rgba(255,255,255,.15) 75%,transparent 75%,transparent)', backgroundSize: '1rem 1rem' }} />
+
                         <motion.div
                             initial={{ width: 0 }}
                             animate={{ width: `${progressPercent}%` }}
-                            transition={{ duration: 0.5 }}
-                            className={`h-full ${isCompleted ? "bg-amber-500" : "bg-primary"}`}
-                        />
+                            transition={{ duration: 0.8, type: "spring" }}
+                            className={`h-full relative ${isCompleted ? "bg-gradient-to-r from-amber-500 to-orange-500" : "bg-primary"}`}
+                        >
+                            <motion.div
+                                className="absolute inset-0 bg-white/20"
+                                animate={{ x: ["-100%", "100%"] }}
+                                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                            />
+                        </motion.div>
                     </div>
                 </div>
 
                 {/* Action */}
                 <div className="mt-6 flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-amber-500">
-                        <Star size={18} />
+                    <div className="flex items-center gap-2 text-amber-500 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                        <Star size={18} className="fill-amber-500/20" />
                         <span className="font-bold">{challenge.points_reward} points</span>
                     </div>
                     {!isCompleted && (
-                        <button
-                            onClick={handleIncrement}
-                            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-colors"
-                        >
-                            <Check size={18} />
-                            Add Progress
-                        </button>
+                        <div className="flex items-center gap-2 px-4 py-2 bg-secondary/50 text-secondary-foreground rounded-xl text-xs font-medium border border-white/5">
+                            <RefreshCw size={14} className="animate-spin-slow" />
+                            Automatic Tracking Active
+                        </div>
                     )}
                 </div>
             </div>
@@ -139,13 +165,41 @@ const DailyChallengeCard = memo(function DailyChallengeCard({
 // Placeholder for when there's no challenge
 const NoChallengeCard = memo(function NoChallengeCard() {
     return (
-        <div className="p-6 rounded-2xl border border-dashed border-border bg-card/50 text-center">
-            <div className="w-16 h-16 mx-auto mb-4 bg-muted rounded-full flex items-center justify-center">
-                <Target size={32} className="text-muted-foreground" />
+        <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="p-8 rounded-2xl border border-dashed border-white/10 bg-card/20 text-center flex flex-col items-center justify-center min-h-[300px] relative overflow-hidden group"
+        >
+            {/* Background Radar Effect */}
+            <div className="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none">
+                <motion.div
+                    animate={{ scale: [1, 2], opacity: [0.5, 0] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "easeOut" }}
+                    className="w-32 h-32 border border-primary rounded-full absolute"
+                />
+                <motion.div
+                    animate={{ scale: [1, 2], opacity: [0.5, 0] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "easeOut", delay: 1 }}
+                    className="w-32 h-32 border border-primary rounded-full absolute"
+                />
             </div>
-            <h3 className="text-lg font-semibold text-foreground mb-2">No Challenge Today</h3>
-            <p className="text-muted-foreground">Check back tomorrow for a new challenge!</p>
-        </div>
+
+            <div className="relative z-10">
+                <div className="w-20 h-20 mx-auto mb-6 bg-muted/20 rounded-full flex items-center justify-center relative">
+                    <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+                        className="absolute inset-0 border-2 border-dashed border-primary/30 rounded-full"
+                    />
+                    <Target size={40} className="text-muted-foreground/70" />
+                </div>
+                <h3 className="text-xl font-bold text-foreground mb-2">No Active Challenge</h3>
+                <p className="text-muted-foreground max-w-sm mx-auto leading-relaxed">
+                    All missions for the current cycle have been processed.
+                    <br /><span className="text-xs uppercase tracking-widest text-primary mt-2 block opacity-70">Check back at 00:00 for new orders</span>
+                </p>
+            </div>
+        </motion.div>
     );
 });
 
@@ -280,17 +334,11 @@ export default function DailyChallenges() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+                    <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
                         <Zap className="text-amber-500" />
-                        Daily Challenge
-                    </h1>
-                    <p className="text-muted-foreground">Complete today&apos;s challenge to earn bonus points</p>
-                </div>
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded-lg">
-                    <Clock size={16} className="text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">
-                        Resets at midnight
-                    </span>
+                        Active Mission
+                    </h2>
+                    <p className="text-muted-foreground text-sm">Complete objectives to earn reputation</p>
                 </div>
             </div>
 
@@ -307,30 +355,45 @@ export default function DailyChallenges() {
             )}
 
             {/* Tips */}
-            <div className="p-4 bg-card border border-border rounded-2xl">
-                <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
-                    <Flame size={18} className="text-orange-500" />
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+                className="p-6 bg-gradient-to-br from-card to-card/50 border border-white/5 rounded-2xl backdrop-blur-sm"
+            >
+                <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                    <div className="p-1.5 bg-orange-500/10 rounded-lg">
+                        <Flame size={18} className="text-orange-500" />
+                    </div>
                     How to Earn More Points
                 </h3>
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                    <li className="flex items-start gap-2">
-                        <Check size={16} className="text-green-500 mt-0.5 shrink-0" />
-                        <span>Complete daily challenges for bonus points</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                        <Check size={16} className="text-green-500 mt-0.5 shrink-0" />
-                        <span>Maintain habit streaks for multipliers</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                        <Check size={16} className="text-green-500 mt-0.5 shrink-0" />
-                        <span>Unlock achievements for big rewards</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                        <Check size={16} className="text-green-500 mt-0.5 shrink-0" />
-                        <span>Complete weekly goals on time</span>
-                    </li>
-                </ul>
-            </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                    <motion.div whileHover={{ scale: 1.02 }} className="flex items-start gap-3 p-3 rounded-xl bg-white/5 border border-white/5">
+                        <div className="mt-0.5 p-1 bg-green-500/20 rounded-full">
+                            <Check size={12} className="text-green-500" />
+                        </div>
+                        <span className="text-sm text-muted-foreground">Complete daily challenges for bonus points</span>
+                    </motion.div>
+                    <motion.div whileHover={{ scale: 1.02 }} className="flex items-start gap-3 p-3 rounded-xl bg-white/5 border border-white/5">
+                        <div className="mt-0.5 p-1 bg-green-500/20 rounded-full">
+                            <Check size={12} className="text-green-500" />
+                        </div>
+                        <span className="text-sm text-muted-foreground">Maintain habit streaks for multipliers</span>
+                    </motion.div>
+                    <motion.div whileHover={{ scale: 1.02 }} className="flex items-start gap-3 p-3 rounded-xl bg-white/5 border border-white/5">
+                        <div className="mt-0.5 p-1 bg-green-500/20 rounded-full">
+                            <Check size={12} className="text-green-500" />
+                        </div>
+                        <span className="text-sm text-muted-foreground">Unlock achievements for big rewards</span>
+                    </motion.div>
+                    <motion.div whileHover={{ scale: 1.02 }} className="flex items-start gap-3 p-3 rounded-xl bg-white/5 border border-white/5">
+                        <div className="mt-0.5 p-1 bg-green-500/20 rounded-full">
+                            <Check size={12} className="text-green-500" />
+                        </div>
+                        <span className="text-sm text-muted-foreground">Complete weekly goals on time</span>
+                    </motion.div>
+                </div>
+            </motion.div>
         </div>
     );
 }

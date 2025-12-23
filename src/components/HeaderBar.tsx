@@ -139,7 +139,7 @@ function HeaderBar() {
     return (
         <div className={cn(
             "fixed right-3 md:right-4 z-50",
-            isTauri ? "top-12" : "top-3 md:top-4"
+            isTauri ? "bottom-20" : "bottom-20 md:bottom-4"
         )} ref={dropdownRef}>
             {/* Notification Bell Button */}
             <button
@@ -171,11 +171,11 @@ function HeaderBar() {
             <AnimatePresence>
                 {isOpen && (
                     <motion.div
-                        initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
                         transition={{ duration: 0.15 }}
-                        className="absolute right-0 top-full mt-2 w-80 md:w-96 bg-card/95 backdrop-blur-xl border border-primary/20 rounded-2xl shadow-2xl overflow-hidden"
+                        className="absolute right-0 bottom-full mb-2 w-80 md:w-96 bg-card/95 backdrop-blur-xl border border-primary/20 rounded-2xl shadow-2xl overflow-hidden"
                     >
                         {/* Header */}
                         <div className="p-4 border-b border-primary/10 flex items-center justify-between">

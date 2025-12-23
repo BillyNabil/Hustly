@@ -12,7 +12,8 @@ import {
     ArrowLeft,
     Check,
     Loader2,
-    LogOut
+    LogOut,
+    Camera
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -20,6 +21,8 @@ import { useAuth } from "@/lib/auth-context";
 import { useTheme, COLOR_THEMES, ColorThemeId } from "@/lib/theme-context";
 import { supabase } from "@/lib/supabaseClient";
 import { fadeUp, staggerContainer, transitions } from "@/lib/animations";
+import { uploadAvatar } from "@/lib/supabase-service";
+import SettingsVisualizer from "@/components/SettingsVisualizer";
 
 // Settings keys for localStorage
 const SETTINGS_KEYS = {
@@ -51,6 +54,10 @@ export default function SettingsPage() {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deleteConfirmText, setDeleteConfirmText] = useState("");
     const [deleteLoading, setDeleteLoading] = useState(false);
+
+    // Avatar upload state
+    const [uploading, setUploading] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Settings state (colorTheme is now handled by theme context)
     const [settings, setSettings] = useState({
@@ -90,6 +97,47 @@ export default function SettingsPage() {
     const updateSetting = useCallback(<K extends keyof typeof settings>(key: K, value: typeof settings[K]) => {
         setSettings(prev => ({ ...prev, [key]: value }));
     }, []);
+
+    // Avatar upload handler
+    const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        try {
+            setUploading(true);
+            const file = event.target.files?.[0];
+            if (!file) return;
+
+            // Upload to supabase storage
+            const publicUrl = await uploadAvatar(file);
+
+            if (publicUrl) {
+                // Update profile with new avatar URL via updateProfile or direct query
+                // Since updateProfile in supabase-service.ts takes Partial<Profile>, we can use it, but here we use supabase client directly as in existing code
+                const { error } = await supabase
+                    .from("profiles")
+                    .update({
+                        avatar_url: publicUrl,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq("id", user!.id);
+
+                if (error) throw error;
+
+                // Refresh profile context
+                await refreshProfile();
+                setMessage({ type: "success", text: "Avatar updated successfully!" });
+                setTimeout(() => setMessage(null), 3000);
+            } else {
+                throw new Error("Failed to upload image. Please try again.");
+            }
+        } catch (error: any) {
+            console.error(error);
+            setMessage({ type: "error", text: error.message || "Error updating avatar" });
+        } finally {
+            setUploading(false);
+            if (fileInputRef.current) {
+                fileInputRef.current.value = "";
+            }
+        }
+    };
 
     // Save profile to database
     const handleSave = async () => {
@@ -196,53 +244,6 @@ export default function SettingsPage() {
         }
     };
 
-    const SettingSection = ({
-        icon: Icon,
-        title,
-        children
-    }: {
-        icon: typeof User;
-        title: string;
-        children: React.ReactNode;
-    }) => (
-        <motion.div
-            variants={fadeUp}
-            className="glass-panel rounded-xl border border-primary/10 p-4 md:p-6"
-        >
-            <div className="flex items-center gap-3 mb-4">
-                <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-primary/20 flex items-center justify-center">
-                    <Icon className="w-4 h-4 md:w-5 md:h-5 text-primary" />
-                </div>
-                <h2 className="text-base md:text-lg font-semibold text-white">{title}</h2>
-            </div>
-            {children}
-        </motion.div>
-    );
-
-    const ToggleSwitch = ({
-        checked,
-        onChange,
-        label
-    }: {
-        checked: boolean;
-        onChange: () => void;
-        label: string;
-    }) => (
-        <div className="flex items-center justify-between py-3">
-            <span className="text-sm text-muted-foreground">{label}</span>
-            <button
-                onClick={onChange}
-                className={`w-11 h-6 rounded-full transition-colors relative ${checked ? "bg-primary" : "bg-secondary"
-                    }`}
-            >
-                <div
-                    className={`w-5 h-5 rounded-full bg-white absolute top-0.5 transition-transform ${checked ? "translate-x-5" : "translate-x-0.5"
-                        }`}
-                />
-            </button>
-        </div>
-    );
-
     return (
         <div className="p-4 md:p-8 relative min-h-full overflow-y-auto">
             {/* Background Gradients */}
@@ -252,24 +253,9 @@ export default function SettingsPage() {
             </div>
 
             <div className="relative z-10 max-w-2xl mx-auto space-y-6">
-                {/* Header */}
-                <motion.header
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={transitions.normal}
-                    className="flex items-center gap-4"
-                >
-                    <Link
-                        href="/"
-                        className="p-2 hover:bg-white/5 rounded-lg transition-colors"
-                    >
-                        <ArrowLeft className="w-5 h-5 text-muted-foreground" />
-                    </Link>
-                    <div>
-                        <h1 className="text-2xl font-bold text-white">Settings</h1>
-                        <p className="text-muted-foreground text-sm">Manage your account and preferences</p>
-                    </div>
-                </motion.header>
+
+                {/* Visualizer Header */}
+                <SettingsVisualizer profile={profile} />
 
                 {/* Message */}
                 {message && (
@@ -294,26 +280,68 @@ export default function SettingsPage() {
                 >
                     {/* Profile Settings */}
                     <SettingSection icon={User} title="Profile">
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm text-muted-foreground mb-1">Display Name</label>
-                                <input
-                                    type="text"
-                                    value={settings.displayName}
-                                    onChange={(e) => setSettings({ ...settings, displayName: e.target.value })}
-                                    className="w-full bg-secondary/50 border border-primary/10 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-primary/50"
-                                    placeholder="Your name"
-                                />
+                        <div className="flex flex-col md:flex-row gap-6 items-start">
+                            {/* Avatar Section */}
+                            <div className="flex flex-col items-center gap-3">
+                                <div className="relative group">
+                                    <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-accent p-1 cursor-pointer overflow-hidden shadow-2xl shadow-primary/20"
+                                        onClick={() => fileInputRef.current?.click()}>
+                                        <div className="w-full h-full rounded-full bg-black flex items-center justify-center overflow-hidden relative">
+                                            {profile?.avatar_url ? (
+                                                <img
+                                                    src={profile.avatar_url}
+                                                    alt="Profile"
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            ) : (
+                                                <span className="text-3xl font-bold text-white">
+                                                    {(settings.displayName || "H").slice(0, 2).toUpperCase()}
+                                                </span>
+                                            )}
+
+                                            {/* Hover Overlay */}
+                                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                                                <Camera className="w-8 h-8 text-white/80" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <input
+                                        type="file"
+                                        ref={fileInputRef}
+                                        onChange={handleFileChange}
+                                        accept="image/*"
+                                        className="hidden"
+                                    />
+                                    {uploading && (
+                                        <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full z-10">
+                                            <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                                        </div>
+                                    )}
+                                </div>
+                                <p className="text-xs text-muted-foreground">Click to change</p>
                             </div>
-                            <div>
-                                <label className="block text-sm text-muted-foreground mb-1">Email</label>
-                                <input
-                                    type="email"
-                                    value={settings.email}
-                                    disabled
-                                    className="w-full bg-secondary/30 border border-primary/10 rounded-lg px-4 py-2.5 text-muted-foreground cursor-not-allowed"
-                                />
-                                <p className="text-xs text-muted-foreground mt-1">Email cannot be changed</p>
+
+                            <div className="space-y-4 flex-1 w-full">
+                                <div>
+                                    <label className="block text-sm text-muted-foreground mb-1">Display Name</label>
+                                    <input
+                                        type="text"
+                                        value={settings.displayName}
+                                        onChange={(e) => setSettings({ ...settings, displayName: e.target.value })}
+                                        className="w-full bg-secondary/50 border border-primary/10 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                        placeholder="Your name"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm text-muted-foreground mb-1">Email</label>
+                                    <input
+                                        type="email"
+                                        value={settings.email}
+                                        disabled
+                                        className="w-full bg-secondary/30 border border-primary/10 rounded-lg px-4 py-2.5 text-muted-foreground cursor-not-allowed"
+                                    />
+                                    <p className="text-xs text-muted-foreground mt-1">Email cannot be changed</p>
+                                </div>
                             </div>
                         </div>
                     </SettingSection>
@@ -406,7 +434,7 @@ export default function SettingsPage() {
                         {saving ? (
                             <>
                                 <Loader2 className="w-5 h-5 animate-spin" />
-                                Saving...
+                                <span className="text-primary font-bold">Saving...</span>
                             </>
                         ) : saved ? (
                             <>
@@ -423,7 +451,10 @@ export default function SettingsPage() {
 
                     {/* Logout Button */}
                     <button
-                        onClick={signOut}
+                        onClick={async () => {
+                            await signOut();
+                            router.push("/landing");
+                        }}
                         className="w-full flex items-center justify-center gap-2 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 text-red-400 font-medium py-3 rounded-xl transition-all"
                     >
                         <LogOut className="w-5 h-5" />
@@ -534,3 +565,50 @@ export default function SettingsPage() {
         </div>
     );
 }
+
+const SettingSection = ({
+    icon: Icon,
+    title,
+    children
+}: {
+    icon: any;
+    title: string;
+    children: React.ReactNode;
+}) => (
+    <motion.div
+        variants={fadeUp}
+        className="glass-panel rounded-xl border border-primary/10 p-4 md:p-6"
+    >
+        <div className="flex items-center gap-3 mb-4">
+            <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-primary/20 flex items-center justify-center">
+                <Icon className="w-4 h-4 md:w-5 md:h-5 text-primary" />
+            </div>
+            <h2 className="text-base md:text-lg font-semibold text-white">{title}</h2>
+        </div>
+        {children}
+    </motion.div>
+);
+
+const ToggleSwitch = ({
+    checked,
+    onChange,
+    label
+}: {
+    checked: boolean;
+    onChange: () => void;
+    label: string;
+}) => (
+    <div className="flex items-center justify-between py-3">
+        <span className="text-sm text-muted-foreground">{label}</span>
+        <button
+            onClick={onChange}
+            className={`w-11 h-6 rounded-full transition-colors relative ${checked ? "bg-primary" : "bg-secondary"
+                }`}
+        >
+            <div
+                className={`w-5 h-5 rounded-full bg-white absolute top-0.5 transition-transform ${checked ? "translate-x-5" : "translate-x-0.5"
+                    }`}
+            />
+        </button>
+    </div>
+);

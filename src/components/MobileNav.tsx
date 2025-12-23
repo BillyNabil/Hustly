@@ -20,6 +20,7 @@ import {
     Settings,
     CalendarCheck,
     Bell,
+    Timer,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -34,11 +35,12 @@ const mainNavItems = [
 // Additional items in "More" menu
 const moreNavItems = [
     { key: "notifications", href: "/notifications", icon: Bell, label: "Notifs", color: "text-red-400" },
+    { key: "schedule", href: "/schedule", icon: Timer, label: "Time Block", color: "text-primary" },
     { key: "goals", href: "/goals", icon: CalendarCheck, label: "Goals", color: "text-blue-400" },
     { key: "finance", href: "/finance", icon: Wallet, label: "Finance", color: "text-green-400" },
     { key: "visionBoard", href: "/vision", icon: Target, label: "Vision", color: "text-purple-400" },
     { key: "analytics", href: "/analytics", icon: BarChart3, label: "Analytics", color: "text-cyan-400" },
-    { key: "achievements", href: "/achievements", icon: Trophy, label: "Achievements", color: "text-yellow-400" },
+    { key: "achievements", href: "/achievements", icon: Trophy, label: "Badges", color: "text-yellow-400" },
     { key: "challenges", href: "/challenges", icon: Zap, label: "Challenges", color: "text-orange-400" },
     { key: "leaderboard", href: "/leaderboard", icon: Crown, label: "Leaderboard", color: "text-primary" },
     { key: "settings", href: "/settings", icon: Settings, label: "Settings", color: "text-slate-400" },

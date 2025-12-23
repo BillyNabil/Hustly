@@ -2,392 +2,258 @@
   <img src="public/web-app-manifest-512x512.png" alt="Hustly Logo" width="150" height="150" />
 </p>
 
-<h1 align="center">🚀 Hustly</h1>
+<h1 align="center">🚀 Hustly - The Hustler's OS</h1>
 
 <p align="center">
-  <strong>Your All-in-One Productivity & Hustle Companion</strong>
+  <strong>Manage your empire. Track habits. Achieve goals. Powered by AI.</strong>
 </p>
 
 <p align="center">
-  <a href="#features">Features</a> •
-  <a href="#installation">Installation</a> •
-  <a href="#tech-stack">Tech Stack</a> •
-  <a href="#screenshots">Screenshots</a> •
-  <a href="#contributing">Contributing</a>
+  <a href="#-features">Features</a> •
+  <a href="#-quick-start">Quick Start</a> •
+  <a href="#-tech-stack">Tech Stack</a> •
+  <a href="#-installation">Installation</a> •
+  <a href="#-documentation">Documentation</a>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.1.1-blue.svg" alt="Version" />
+  <img src="https://img.shields.io/badge/version-0.1.2-blue.svg" alt="Version" />
   <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License" />
-  <img src="https://img.shields.io/badge/platform-Windows%20|%20macOS%20|%20Linux%20|%20Web%20|%20PWA-orange.svg" alt="Platform" />
-  <img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs Welcome" />
+  <img src="https://img.shields.io/badge/Next.js-14-black.svg" alt="Next.js" />
+  <img src="https://img.shields.io/badge/Tauri-2.0-24c8db.svg" alt="Tauri" />
+  <img src="https://img.shields.io/badge/TypeScript-5.0-3178c6.svg" alt="TypeScript" />
 </p>
 
 ---
 
 ## 🌟 Overview
 
-**Hustly** is a premium, feature-rich productivity application designed for entrepreneurs, freelancers, and ambitious hustlers. Built with modern technologies and featuring a stunning glassmorphism UI, Hustly helps you manage your ideas, track your finances, build habits, and stay motivated on your journey to success.
+**Hustly** adalah aplikasi produktivitas all-in-one yang dirancang untuk entrepreneurs, freelancers, dan para hustler ambisius. Dibangun dengan teknologi modern dan UI glassmorphism yang stunning, Hustly membantu kamu mengelola ide, melacak keuangan, membangun kebiasaan, dan tetap termotivasi dalam perjalanan menuju kesuksesan.
 
 > 💡 *"Your empire is waiting. Let Hustly help you build it."*
 
----
+### ✨ Highlights
 
-## ✨ Features
-
-### 📋 **Idea Management (Kanban Board)**
-- Drag-and-drop Kanban board with customizable columns
-- Status tracking: Backlog → In Progress → Done
-- Priority levels and category tagging
-- Quick actions and bulk operations
-
-### 💰 **Finance Tracker**
-- Track income and expenses across multiple accounts
-- Beautiful charts and analytics
-- Budget management and goal setting
-- Multi-currency support
-
-### 🎯 **Weekly Goals**
-- Set and track weekly objectives
-- Progress visualization with animated indicators
-- Smart goal suggestions based on your habits
-- Deadline reminders
-
-### 📈 **Habits Tracker**
-- Build positive habits with streak tracking
-- Daily/Weekly/Monthly habit schedules
-- Streak celebrations and recovery system
-- Visual progress calendar
-
-### 🏆 **Achievements & Gamification**
-- Unlock achievements as you progress
-- XP system and leveling
-- Leaderboards for competitive motivation
-- Daily challenges with rewards
-
-### 🤖 **Ghost CEO AI Chat**
-- AI-powered business advisor
-- Get insights and recommendations
-- Brainstorm ideas with your personal CEO
-- Powered by Google Gemini
-
-### 🖼️ **Vision Board**
-- Create visual goal boards
-- Drag-and-drop image placement
-- Customizable layouts and themes
-- Export and share your vision
-
-### 📊 **Analytics Dashboard**
-- Comprehensive productivity metrics
-- Visual data representation
-- Trend analysis and insights
-- Customizable date ranges
-
-### 🔔 **Smart Notifications**
-- Desktop and push notifications
-- Customizable alert settings
-- Focus mode with priority filtering
-- Notification history
-
-### 🌍 **Multi-language Support**
-- English and Indonesian (Bahasa Indonesia)
-- Easy language switching
-- Localized UI components
-
-### 🎨 **Premium UI/UX**
-- Glassmorphism design with blur effects
-- Dark mode optimized
-- Smooth animations powered by Framer Motion
-- Responsive design for all devices
+- 🎨 **Premium Glassmorphism UI** - Dark theme dengan efek blur yang memukau
+- 🖥️ **Cross-Platform** - Web, PWA, dan Desktop (Windows/macOS/Linux)
+- 🤖 **AI-Powered** - Ghost CEO chat dengan Google Gemini
+- 🌍 **Multi-Language** - Bahasa Indonesia & English
+- ⚡ **Real-time Sync** - Data tersinkronisasi dengan Supabase
+- 🏆 **Gamification** - Achievements, XP, dan Leaderboard
 
 ---
 
-## 🖥️ Platform Support
+## 📋 Features
 
-| Platform | Status | Notes |
-|----------|--------|-------|
-| 🪟 Windows | ✅ Ready | Native desktop app via Tauri |
-| 🍎 macOS | ✅ Ready | Native desktop app via Tauri |
-| 🐧 Linux | ✅ Ready | Native desktop app via Tauri |
-| 🌐 Web | ✅ Ready | PWA with offline support |
-| 📱 Android | 🚧 Coming Soon | Via Tauri 2.0 |
-| 🍏 iOS | 🚧 Coming Soon | Via Tauri 2.0 |
+### 🎯 Productivity Suite
+
+| Feature | Deskripsi |
+|---------|-----------|
+| **📋 Kanban Board** | Drag-and-drop board untuk mengelola ide dan proyek dengan status Backlog → In Progress → Done |
+| **🎯 Weekly Goals** | Set dan track target mingguan dengan progress visualization |
+| **📅 Schedule** | Time blocking dan perencanaan jadwal harian |
+| **📈 Habits Tracker** | Build positive habits dengan streak tracking dan visual calendar |
+
+### 💰 Finance & Analytics
+
+| Feature | Deskripsi |
+|---------|-----------|
+| **💳 Finance Tracker** | Track income & expenses dengan beautiful charts |
+| **📊 Analytics Dashboard** | Comprehensive productivity metrics dan trend analysis |
+| **📈 Overview** | Bird's eye view semua aktivitas dan progress kamu |
+
+### 🏆 Gamification & Social
+
+| Feature | Deskripsi |
+|---------|-----------|
+| **🏆 Achievements** | Unlock achievements saat mencapai milestones |
+| **⚔️ Daily Challenges** | Tantangan harian dengan rewards |
+| **🏅 Leaderboard** | Compete dengan hustlers lainnya |
+| **📣 Notifications** | Smart notifications dengan push support |
+
+### 🤖 AI & Visualization
+
+| Feature | Deskripsi |
+|---------|-----------|
+| **🤖 Ghost CEO** | AI business advisor powered by Google Gemini |
+| **🖼️ Vision Board** | Visualisasi goals dan dreams |
+| **🎨 Custom Themes** | Personalisasi tampilan sesuai preferensi |
 
 ---
 
-## 📥 Installation
+## 🚀 Quick Start
 
-### Option 1: Download Pre-built Binaries
+### Prerequisites
 
-#### Windows
+- **Node.js** 18.x atau lebih baru
+- **npm** atau **yarn**
+- **Rust** (untuk build desktop dengan Tauri)
+
+### Development
+
+```bash
+# Clone repository
+git clone https://github.com/yourusername/hustly.git
+cd hustly/web
+
+# Install dependencies
+npm install
+
+# Setup environment variables
+cp .env.example .env.local
+# Edit .env.local dengan credentials Supabase dan Gemini API key kamu
+
+# Run development server
+npm run dev
 ```
-📦 Hustly_0.1.1_x64-setup.exe (2.4 MB)
+
+Buka [http://localhost:3000](http://localhost:3000) di browser.
+
+### Desktop Development (Tauri)
+
+```bash
+# Run Tauri development
+npm run tauri:dev
+
+# Build desktop app
+npm run tauri:build
 ```
-Download the latest release from the [Releases](#releases) section.
-
-### Option 2: Build from Source
-
-#### Prerequisites
-- **Node.js** 18.x or later
-- **npm** or **yarn**
-- **Rust** (for Tauri desktop builds)
-- **Git**
-
-#### Steps
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/yourusername/hustly.git
-   cd hustly/web
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Set up environment variables**
-   ```bash
-   cp .env.example .env.local
-   ```
-   
-   Configure your `.env.local`:
-   ```env
-   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-   GEMINI_API_KEY=your_gemini_api_key
-   ```
-
-4. **Run development server**
-   ```bash
-   npm run dev
-   ```
-
-5. **Build for production**
-   ```bash
-   # Web build
-   npm run build
-   
-   # Desktop build (requires Rust)
-   npm run tauri:build
-   ```
 
 ---
 
 ## 🛠️ Tech Stack
 
 ### Frontend
-| Technology | Purpose |
-|------------|---------|
-| **Next.js 14** | React framework with App Router |
-| **TypeScript** | Type-safe JavaScript |
-| **Tailwind CSS 3** | Utility-first CSS framework |
-| **Framer Motion** | Animation library |
-| **Lucide React** | Beautiful icon set |
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| **Next.js** | 14.x | React framework dengan App Router |
+| **React** | 18.x | UI library |
+| **TypeScript** | 5.x | Type-safe JavaScript |
+| **Tailwind CSS** | 3.x | Utility-first CSS framework |
+| **Framer Motion** | 12.x | Animation library |
+| **Lucide React** | Latest | Icon library |
 
 ### Backend & Database
 | Technology | Purpose |
 |------------|---------|
-| **Supabase** | Backend-as-a-Service |
+| **Supabase** | Backend-as-a-Service (Auth, Database, Realtime) |
 | **PostgreSQL** | Relational database |
-| **Row Level Security** | Data protection |
+| **Row Level Security** | Data protection per user |
 
 ### Desktop & Mobile
-| Technology | Purpose |
-|------------|---------|
-| **Tauri 2.0** | Cross-platform desktop apps |
-| **Rust** | Native performance |
-| **PWA** | Progressive Web App support |
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| **Tauri** | 2.x | Cross-platform desktop apps |
+| **Rust** | Latest | Native performance |
+| **PWA** | - | Progressive Web App dengan offline support |
 
 ### AI Integration
 | Technology | Purpose |
 |------------|---------|
-| **Google Gemini** | AI-powered Ghost CEO chat |
-| **Generative AI SDK** | Natural language processing |
+| **Google Gemini** | AI chat untuk Ghost CEO |
+| **@google/genai** | Generative AI SDK |
 
 ---
 
-## � Screenshots
+## 📥 Installation
 
-<p align="center">
-  <img src="public/screenshots/preview.png" alt="Hustly App Preview" width="100%" />
-</p>
+### Option 1: Download Pre-built (Windows)
 
-### 🎯 Main Dashboard
-The central hub for all your hustle activities with real-time stats and quick access to all features.
+Download installer terbaru dari [Releases](./RELEASES.md):
 
-<p align="center">
-  <img src="public/screenshots/dashboard-preview.png" alt="Dashboard" width="100%" />
-</p>
+| Version | Installer | Size |
+|---------|-----------|------|
+| v0.1.2 | `Hustly_0.1.2_x64-setup.exe` | ~2.4 MB |
+| v0.1.2 | `Hustly_0.1.2_x64_en-US.msi` | ~2.3 MB |
 
-### 📋 Idea Management (Kanban Board)
-<table>
-  <tr>
-    <td width="50%">
-      <img src="public/screenshots/kanban-board.png" alt="Kanban Board" width="100%" />
-      <p align="center"><em>Organize ideas with drag-and-drop Kanban</em></p>
-    </td>
-    <td width="50%">
-      <img src="public/screenshots/kanban-detail.png" alt="Task Details" width="100%" />
-      <p align="center"><em>Detailed task management with priorities</em></p>
-    </td>
-  </tr>
-</table>
+### Option 2: Build from Source
 
-### 💰 Finance Tracker
-<table>
-  <tr>
-    <td width="50%">
-      <img src="public/screenshots/finance-overview.png" alt="Finance Overview" width="100%" />
-      <p align="center"><em>Track income and expenses</em></p>
-    </td>
-    <td width="50%">
-      <img src="public/screenshots/finance-charts.png" alt="Financial Charts" width="100%" />
-      <p align="center"><em>Beautiful analytics and insights</em></p>
-    </td>
-  </tr>
-</table>
+```bash
+# Clone dan install
+git clone https://github.com/yourusername/hustly.git
+cd hustly/web
+npm install
 
-### 🎯 Goals & Habits
-<table>
-  <tr>
-    <td width="50%">
-      <img src="public/screenshots/weekly-goals.png" alt="Weekly Goals" width="100%" />
-      <p align="center"><em>Set and track weekly objectives</em></p>
-    </td>
-    <td width="50%">
-      <img src="public/screenshots/habits-tracker.png" alt="Habits Tracker" width="100%" />
-      <p align="center"><em>Build consistency with streak tracking</em></p>
-    </td>
-  </tr>
-</table>
+# Environment variables
+cp .env.example .env.local
+```
 
-### 🤖 Ghost CEO AI Chat
-<p align="center">
-  <img src="public/screenshots/ghost-ceo-chat.png" alt="AI Chat" width="70%" />
-  <br/>
-  <em>Your personal AI business advisor powered by Google Gemini</em>
-</p>
+**Required Environment Variables:**
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+GEMINI_API_KEY=your_google_gemini_api_key
+```
 
-### 🏆 Achievements & Leaderboard
-<table>
-  <tr>
-    <td width="50%">
-      <img src="public/screenshots/achievements.png" alt="Achievements" width="100%" />
-      <p align="center"><em>Unlock achievements as you progress</em></p>
-    </td>
-    <td width="50%">
-      <img src="public/screenshots/leaderboard.png" alt="Leaderboard" width="100%" />
-      <p align="center"><em>Compete with other hustlers</em></p>
-    </td>
-  </tr>
-</table>
+**Build Commands:**
+```bash
+# Web production build
+npm run build
 
-### 🖼️ Vision Board & Analytics
-<table>
-  <tr>
-    <td width="50%">
-      <img src="public/screenshots/vision-board.png" alt="Vision Board" width="100%" />
-      <p align="center"><em>Visualize your goals and dreams</em></p>
-    </td>
-    <td width="50%">
-      <img src="public/screenshots/analytics.png" alt="Analytics Dashboard" width="100%" />
-      <p align="center"><em>Comprehensive productivity metrics</em></p>
-    </td>
-  </tr>
-</table>
-
-### 📱 Responsive Design
-<p align="center">
-  <img src="public/screenshots/mobile-responsive.png" alt="Mobile View" width="50%" />
-  <br/>
-  <em>Fully responsive design works on all devices</em>
-</p>
-
-> **📝 Screenshots Note:** 
-> 
-> The application screenshots referenced above will be captured and added to the repository soon. For now, you can:
-> - **Try it yourself**: Run `npm run dev` and explore the app at `http://localhost:3000`
-> - **Capture screenshots**: Follow the guide in [docs/SCREENSHOTS.md](docs/SCREENSHOTS.md) to capture your own
-> - **Contribute**: Help us by adding quality screenshots via pull request!
-> 
-> The UI features a stunning glassmorphism design with dark mode theme, smooth animations, and responsive layouts that work beautifully on all devices.
+# Desktop build (Windows/macOS/Linux)
+npm run tauri:build
+```
 
 ---
 
-## �📁 Project Structure
+## 📁 Project Structure
 
 ```
 hustly/web/
-├── 📂 public/                 # Static assets
-│   ├── favicon.ico
-│   ├── manifest.json
-│   └── sw.js                  # Service Worker for PWA
+├── public/                    # Static assets
+│   ├── manifest.json          # PWA manifest
+│   ├── sw.js                  # Service Worker
+│   └── icons/                 # App icons
 │
-├── 📂 src/
-│   ├── 📂 app/                # Next.js App Router pages
-│   │   ├── 📂 achievements/   # Achievements page
-│   │   ├── 📂 analytics/      # Analytics dashboard
-│   │   ├── 📂 api/            # API routes
-│   │   ├── 📂 challenges/     # Daily challenges
-│   │   ├── 📂 chat/           # Ghost CEO chat
-│   │   ├── 📂 finance/        # Finance tracker
-│   │   ├── 📂 goals/          # Weekly goals
-│   │   ├── 📂 habits/         # Habits tracker
-│   │   ├── 📂 ideas/          # Kanban board
-│   │   ├── 📂 landing/        # Landing page
-│   │   ├── 📂 leaderboard/    # Community leaderboard
-│   │   ├── 📂 login/          # Authentication
-│   │   ├── 📂 notifications/  # Notification center
-│   │   ├── 📂 register/       # User registration
-│   │   ├── 📂 settings/       # App settings
-│   │   ├── 📂 vision/         # Vision board
-│   │   ├── globals.css        # Global styles
-│   │   ├── layout.tsx         # Root layout
-│   │   └── page.tsx           # Dashboard
+├── src/
+│   ├── app/                   # Next.js App Router
+│   │   ├── page.tsx           # Dashboard (home)
+│   │   ├── achievements/      # 🏆 Achievements page
+│   │   ├── analytics/         # 📊 Analytics dashboard
+│   │   ├── api/               # API routes
+│   │   ├── challenges/        # ⚔️ Daily challenges
+│   │   ├── chat/              # 🤖 Ghost CEO chat
+│   │   ├── finance/           # 💰 Finance tracker
+│   │   ├── goals/             # 🎯 Weekly goals
+│   │   ├── habits/            # 📈 Habits tracker
+│   │   ├── ideas/             # 📋 Kanban board
+│   │   ├── landing/           # Landing page
+│   │   ├── leaderboard/       # 🏅 Leaderboard
+│   │   ├── login/             # Auth login
+│   │   ├── notifications/     # 🔔 Notification center
+│   │   ├── overview/          # Overview dashboard
+│   │   ├── register/          # Auth register
+│   │   ├── schedule/          # 📅 Schedule/time blocking
+│   │   ├── settings/          # ⚙️ App settings
+│   │   └── vision/            # 🖼️ Vision board
 │   │
-│   ├── 📂 components/         # Reusable components
-│   │   ├── AchievementsSystem.tsx
-│   │   ├── AnalyticsDashboard.tsx
-│   │   ├── AppShell.tsx
-│   │   ├── DailyChallenges.tsx
-│   │   ├── FinanceTracker.tsx
-│   │   ├── GhostCEOChat.tsx
-│   │   ├── HabitsTracker.tsx
-│   │   ├── HeaderBar.tsx
-│   │   ├── KanbanBoard.tsx
-│   │   ├── Leaderboard.tsx
-│   │   ├── MobileNav.tsx
-│   │   ├── NotificationsCenter.tsx
-│   │   ├── PWAProvider.tsx
-│   │   ├── Sidebar.tsx
-│   │   ├── SpotifyPlayer.tsx
-│   │   ├── TitleBar.tsx
-│   │   ├── VisionBoard.tsx
-│   │   └── WeeklyGoals.tsx
+│   ├── components/            # React components
+│   │   ├── AppShell.tsx       # Main app layout
+│   │   ├── Sidebar.tsx        # Navigation sidebar
+│   │   ├── HeaderBar.tsx      # Top header
+│   │   ├── MobileNav.tsx      # Mobile navigation
+│   │   └── ...                # Feature components
 │   │
-│   └── 📂 lib/                # Utilities & services
-│       ├── animations.ts      # Framer Motion variants
-│       ├── auth-context.tsx   # Authentication context
-│       ├── database.types.ts  # TypeScript types
-│       ├── i18n.ts            # Internationalization
-│       ├── language-context.tsx
-│       ├── supabase-service.ts # Database operations
-│       ├── supabaseClient.ts
-│       ├── theme-context.tsx  # Theme management
-│       └── utils.ts           # Helper functions
+│   └── lib/                   # Utilities
+│       ├── supabase-service.ts    # Database operations
+│       ├── auth-context.tsx       # Auth state
+│       ├── language-context.tsx   # i18n
+│       ├── theme-context.tsx      # Theme management
+│       └── animations.ts          # Framer Motion variants
 │
-├── 📂 src-tauri/              # Tauri desktop app
-│   ├── Cargo.toml
-│   ├── tauri.conf.json
-│   └── 📂 icons/              # App icons
+├── src-tauri/                 # Tauri desktop app
+│   ├── tauri.conf.json        # Tauri configuration
+│   ├── src/                   # Rust source
+│   └── icons/                 # Desktop icons
 │
-├── 📂 supabase/               # Database migrations
-│   └── 📂 migrations/
+├── supabase/                  # Database
+│   ├── migrations/            # SQL migrations
+│   └── functions/             # Edge functions
 │
-├── next.config.mjs
-├── tailwind.config.ts
-├── tsconfig.json
+├── docs/                      # Documentation
+│   ├── PUSH_NOTIFICATIONS.md
+│   └── SCREENSHOTS.md
+│
 └── package.json
 ```
 
@@ -395,33 +261,22 @@ hustly/web/
 
 ## 🗃️ Database Schema
 
-Hustly uses **Supabase** with **PostgreSQL** as its database. Key tables include:
+Hustly menggunakan **Supabase** dengan **PostgreSQL**. Key tables:
 
 | Table | Description |
 |-------|-------------|
-| `profiles` | User profiles with stats and preferences |
+| `profiles` | User profiles, stats, preferences |
 | `ideas` | Kanban board items |
 | `goals` | Weekly/monthly goals |
-| `habits` | Habit definitions and schedules |
+| `habits` | Habit definitions |
 | `habit_logs` | Habit completion tracking |
 | `transactions` | Financial transactions |
-| `achievements` | Available achievements |
+| `achievements` | Achievement definitions |
 | `user_achievements` | Unlocked achievements |
 | `notifications` | User notifications |
-| `vision_boards` | Vision board data |
-| `leaderboard` | Community rankings |
+| `push_subscriptions` | PWA push subscriptions |
 
-All tables are protected with **Row Level Security (RLS)** policies.
-
----
-
-## 🔐 Authentication
-
-Hustly supports multiple authentication methods via Supabase Auth:
-
-- ✉️ **Email/Password** - Traditional registration
-- 🔗 **Magic Link** - Passwordless email login
-- 🌐 **OAuth Providers** - Google, GitHub, Discord (configurable)
+Semua tables dilindungi dengan **Row Level Security (RLS)** policies.
 
 ---
 
@@ -429,119 +284,118 @@ Hustly supports multiple authentication methods via Supabase Auth:
 
 ### Color Palette
 
-```css
-/* Primary Colors */
---primary: #facc15;      /* Electric Yellow */
---accent: #f97316;       /* Vibrant Orange */
---secondary: #6366f1;    /* Indigo */
-
-/* Semantic Colors */
---success: #22c55e;      /* Green */
---warning: #eab308;      /* Amber */
---error: #ef4444;        /* Red */
-
-/* Neutrals */
---background: #0a0a0a;   /* Deep Black */
---card: #1a1a1a;         /* Dark Gray */
---foreground: #fafafa;   /* Almost White */
-```
+| Color | Hex | Usage |
+|-------|-----|-------|
+| Primary | `#d4af37` | Gold/Electric Yellow |
+| Accent | `#f97316` | Orange |
+| Secondary | `#6366f1` | Indigo |
+| Background | `#0a0a0a` | Deep Black |
+| Card | `#1a1a1a` | Dark Gray |
 
 ### Typography
 
-- **Font Family**: Inter, system-ui
-- **Headings**: Bold with gradient backgrounds
-- **Body**: Regular weight for readability
+- **Font**: Outfit (Google Fonts)
+- **Style**: Modern, clean, readable
 
 ### UI Components
 
-- **Glass Panels**: Backdrop blur with subtle borders
-- **Cards**: Elevated with hover effects
-- **Buttons**: Gradient backgrounds with micro-animations
-- **Inputs**: Dark theme with focus rings
+- **Glassmorphism** - Backdrop blur dengan subtle borders
+- **Cards** - Elevated dengan hover effects
+- **Buttons** - Gradient backgrounds dengan micro-animations
+- **Dark Mode First** - Optimized untuk dark theme
 
 ---
 
-## 🚀 Releases
+## 🖥️ Platform Support
 
-### v0.1.1 (Latest)
-**Released:** December 22, 2024
-
-#### 📦 Downloads
-| Platform | Download | Size |
-|----------|----------|------|
-| Windows (x64) | [Hustly_0.1.1_x64-setup.exe](./src-tauri/target/release/bundle/nsis/Hustly_0.1.1_x64-setup.exe) | ~2.4 MB |
-| Windows (MSI) | [Hustly_0.1.1_x64_en-US.msi](./src-tauri/target/release/bundle/msi/) | ~2.3 MB |
-
-#### ✨ What's New
-- 🐛 Fixed chunk loading issues in production build
-- 🎨 Improved glassmorphism effects
-- 🌐 Added Indonesian language support
-- 🔔 Enhanced notification system
-- 📱 Better mobile responsiveness
-- ⚡ Performance optimizations
+| Platform | Status | Notes |
+|----------|--------|-------|
+| 🌐 Web Browser | ✅ Ready | Chrome, Firefox, Safari, Edge |
+| 📱 PWA | ✅ Ready | Installable dengan offline support |
+| 🪟 Windows | ✅ Ready | Native via Tauri 2.0 |
+| 🍎 macOS | ✅ Ready | Native via Tauri 2.0 |
+| 🐧 Linux | ✅ Ready | Native via Tauri 2.0 |
+| 📱 Android | 🚧 Soon | Via Tauri 2.0 |
+| 🍏 iOS | 🚧 Soon | Via Tauri 2.0 |
 
 ---
 
-### v0.1.0
-**Released:** December 20, 2024
+## 📚 Documentation
 
-#### ✨ Initial Release
-- 📋 Kanban Board for idea management
-- 💰 Finance Tracker
-- 🎯 Weekly Goals
-- 📈 Habits Tracker with streaks
-- 🏆 Achievements system
-- 🤖 Ghost CEO AI Chat
-- 🖼️ Vision Board
-- 📊 Analytics Dashboard
-- 🔔 Notification Center
-- 🌍 Multi-language support (EN/ID)
-- 🎨 Premium glassmorphism UI
-- 🖥️ Cross-platform desktop app
+- [Push Notifications Setup](./docs/PUSH_NOTIFICATIONS.md)
+- [Screenshots Guide](./docs/SCREENSHOTS.md)
+- [Release Notes](./RELEASES.md)
+
+---
+
+## 🚀 Scripts
+
+```bash
+# Development
+npm run dev          # Start dev server (localhost:3000)
+
+# Production
+npm run build        # Build for production
+npm run start        # Start production server
+npm run lint         # Run ESLint
+
+# Desktop (Tauri)
+npm run tauri:dev    # Start Tauri dev
+npm run tauri:build  # Build desktop app
+```
+
+---
+
+## 🔐 Authentication
+
+Hustly mendukung beberapa metode autentikasi via Supabase Auth:
+
+- ✉️ **Email/Password** - Registrasi tradisional
+- 🔗 **Magic Link** - Passwordless email login
+- 🌐 **OAuth** - Google, GitHub, Discord (configurable)
 
 ---
 
 ## 🤝 Contributing
 
-We welcome contributions! Here's how you can help:
+Contributions welcome! 
 
-1. **Fork** the repository
-2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
-3. **Commit** your changes (`git commit -m 'Add amazing feature'`)
-4. **Push** to the branch (`git push origin feature/amazing-feature`)
-5. **Open** a Pull Request
+1. Fork repository
+2. Create feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push branch (`git push origin feature/amazing-feature`)
+5. Open Pull Request
 
-### Development Guidelines
-- Follow the existing code style
+### Guidelines
+- Follow existing code style
 - Write meaningful commit messages
-- Test your changes thoroughly
+- Test changes thoroughly
 - Update documentation as needed
 
 ---
 
 ## 📜 License
 
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+MIT License - see [LICENSE](LICENSE) file.
 
 ---
 
 ## 🙏 Acknowledgements
 
-- [Next.js](https://nextjs.org/) - The React Framework
-- [Tauri](https://tauri.app/) - Build desktop apps
-- [Supabase](https://supabase.com/) - Open source Firebase alternative
-- [Framer Motion](https://www.framer.com/motion/) - Animation library
-- [Lucide](https://lucide.dev/) - Beautiful icons
-- [Tailwind CSS](https://tailwindcss.com/) - Utility-first CSS
+- [Next.js](https://nextjs.org/)
+- [Tauri](https://tauri.app/)
+- [Supabase](https://supabase.com/)
+- [Framer Motion](https://www.framer.com/motion/)
+- [Lucide Icons](https://lucide.dev/)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [Google Gemini](https://ai.google.dev/)
 
 ---
 
 <p align="center">
-  <strong>Built with 💛 by the Hustly Team</strong>
+  <strong>Built with 💛 for Hustlers</strong>
 </p>
 
 <p align="center">
-  <a href="https://twitter.com/hustlyapp">Twitter</a> •
-  <a href="https://discord.gg/hustly">Discord</a> •
-  <a href="https://hustly.app">Website</a>
+  Made in Indonesia 🇮🇩
 </p>

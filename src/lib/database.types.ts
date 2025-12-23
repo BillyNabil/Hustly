@@ -18,6 +18,7 @@ export interface Database {
           updated_at: string
           email: string
           full_name: string | null
+          display_name: string | null
           avatar_url: string | null
           hustle_level: string
           productivity_score: number
@@ -31,6 +32,7 @@ export interface Database {
           updated_at?: string
           email: string
           full_name?: string | null
+          display_name?: string | null
           avatar_url?: string | null
           hustle_level?: string
           productivity_score?: number
@@ -44,6 +46,7 @@ export interface Database {
           updated_at?: string
           email?: string
           full_name?: string | null
+          display_name?: string | null
           avatar_url?: string | null
           hustle_level?: string
           productivity_score?: number
@@ -566,6 +569,68 @@ export interface Database {
           productivity_score?: number
         }
       }
+      // =============================================
+      // TIME BLOCKING
+      // =============================================
+      time_blocks: {
+        Row: {
+          id: string
+          created_at: string
+          updated_at: string
+          user_id: string
+          title: string
+          description: string | null
+          start_time: string
+          end_time: string
+          color: string
+          category: 'work' | 'personal' | 'meeting' | 'break' | 'focus' | 'other'
+          is_recurring: boolean
+          recurrence_pattern: string | null
+          reminder_minutes: number
+          is_completed: boolean
+          completed_at: string | null
+          linked_task_id: string | null
+          notes: string | null
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          updated_at?: string
+          user_id: string
+          title: string
+          description?: string | null
+          start_time: string
+          end_time: string
+          color?: string
+          category?: 'work' | 'personal' | 'meeting' | 'break' | 'focus' | 'other'
+          is_recurring?: boolean
+          recurrence_pattern?: string | null
+          reminder_minutes?: number
+          is_completed?: boolean
+          completed_at?: string | null
+          linked_task_id?: string | null
+          notes?: string | null
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          updated_at?: string
+          user_id?: string
+          title?: string
+          description?: string | null
+          start_time?: string
+          end_time?: string
+          color?: string
+          category?: 'work' | 'personal' | 'meeting' | 'break' | 'focus' | 'other'
+          is_recurring?: boolean
+          recurrence_pattern?: string | null
+          reminder_minutes?: number
+          is_completed?: boolean
+          completed_at?: string | null
+          linked_task_id?: string | null
+          notes?: string | null
+        }
+      }
     }
   }
 }
@@ -598,6 +663,8 @@ export type AchievementCategory = 'tasks' | 'finance' | 'habits' | 'streak' | 's
 export type AchievementRarity = 'common' | 'rare' | 'epic' | 'legendary'
 export type NotificationType = 'reminder' | 'achievement' | 'deadline' | 'briefing' | 'challenge' | 'system'
 export type WeeklyGoalType = 'tasks' | 'income' | 'habits' | 'focus_hours' | 'custom'
+export type TimeBlock = Database['public']['Tables']['time_blocks']['Row']
+export type TimeBlockCategory = 'work' | 'personal' | 'meeting' | 'break' | 'focus' | 'other'
 
 // Hustle levels based on productivity score
 export const HUSTLE_LEVELS = [

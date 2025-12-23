@@ -7,6 +7,13 @@ const nextConfig = {
     env: {
         GEMINI_API_KEY: process.env.GEMINI_API_KEY,
     },
+    // Reduce bundle size
+    compiler: {
+        removeConsole: process.env.NODE_ENV === 'production',
+    },
+    experimental: {
+        optimizePackageImports: ['lucide-react', 'framer-motion'],
+    },
 };
 
 export default nextConfig;

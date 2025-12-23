@@ -3,7 +3,7 @@
 import React, { memo, useState, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     LayoutDashboard,
@@ -21,17 +21,81 @@ import {
     Zap,
     Bell,
     CalendarCheck,
+    Timer,
 } from "lucide-react";
+
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/language-context";
 import { useAuth } from "@/lib/auth-context";
 import { sidebarVariants, easings } from "@/lib/animations";
+import { requestNotificationPermission, testNotification } from "@/lib/notifications";
+import { getUnreadNotificationCount } from "@/lib/supabase-service";
 
-type NavKey = "dashboard" | "ideaBoard" | "finance" | "visionBoard" | "ghostCeo" | "leaderboard" | "habits" | "achievements" | "analytics" | "goals" | "challenges";
+// Notification Button Component
+const NotificationButton = memo(function NotificationButton({
+    isExpanded,
+    isLayoutExpanded,
+}: {
+    isExpanded: boolean;
+    isLayoutExpanded: boolean;
+}) {
+    const [unreadCount, setUnreadCount] = React.useState(0);
+
+    React.useEffect(() => {
+        const fetchCount = async () => {
+            const count = await getUnreadNotificationCount();
+            setUnreadCount(count);
+        };
+        fetchCount();
+        // Poll every 30 seconds
+        const interval = setInterval(fetchCount, 30000);
+        return () => clearInterval(interval);
+    }, []);
+
+    return (
+        <Link
+            href="/notifications"
+            className={cn(
+                "flex items-center rounded-lg text-sm font-medium group gpu-accelerate relative",
+                "h-10",
+                isLayoutExpanded ? "px-3 justify-start gap-3" : "justify-center",
+                "text-muted-foreground hover:text-primary hover:bg-primary/5"
+            )}
+            style={{ transition: "background-color 0.15s, color 0.15s, padding 0.3s ease-out" }}
+            title={!isLayoutExpanded ? "Notifications" : undefined}
+        >
+            <div className="relative">
+                <Bell className="w-5 h-5 flex-shrink-0 text-muted-foreground group-hover:text-primary" style={{ transition: "color 0.15s" }} />
+                {unreadCount > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                        {unreadCount > 9 ? "9+" : unreadCount}
+                    </span>
+                )}
+            </div>
+            <AnimatePresence mode="wait">
+                {isExpanded && (
+                    <motion.span
+                        key="notif-label"
+                        variants={textVariants}
+                        initial="hidden"
+                        animate="visible"
+                        exit="exit"
+                        className="whitespace-nowrap overflow-hidden"
+                    >
+                        Notifications
+                    </motion.span>
+                )}
+            </AnimatePresence>
+        </Link>
+    );
+});
+
+type NavKey = "dashboard" | "ideaBoard" | "finance" | "visionBoard" | "ghostCeo" | "leaderboard" | "habits" | "achievements" | "analytics" | "goals" | "challenges" | "schedule";
 
 const navItems: { key: NavKey; href: string; icon: typeof LayoutDashboard }[] = [
     { key: "dashboard", href: "/", icon: LayoutDashboard },
     { key: "ideaBoard", href: "/ideas", icon: Lightbulb },
+    { key: "schedule", href: "/schedule", icon: Timer },
     { key: "habits", href: "/habits", icon: Flame },
     { key: "goals", href: "/goals", icon: CalendarCheck },
     { key: "finance", href: "/finance", icon: Wallet },
@@ -117,6 +181,7 @@ const NavItem = memo(function NavItem({
 
 function Sidebar() {
     const pathname = usePathname();
+    const router = useRouter(); // Initialize router inside component
     const { t } = useLanguage();
     const { user, profile, signOut } = useAuth();
     const [showUserMenu, setShowUserMenu] = useState(false);
@@ -128,7 +193,14 @@ function Sidebar() {
 
     const handleLogout = useCallback(async () => {
         await signOut();
-    }, [signOut]);
+        router.push("/landing");
+    }, [signOut, router]);
+
+    const handleTestNotification = useCallback(async () => {
+        await requestNotificationPermission();
+        testNotification();
+        setShowUserMenu(false);
+    }, []);
 
     const handleMouseEnter = useCallback(() => {
         // Clear any pending timeouts
@@ -179,14 +251,22 @@ function Sidebar() {
             onMouseLeave={handleMouseLeave}
             style={{ willChange: "width" }}
         >
-            {/* Logo */}
-            <div className={cn(
-                "flex items-center h-10 mb-4",
-                isLayoutExpanded ? "px-4 justify-start gap-3" : "justify-center"
-            )} style={{ transition: "padding 0.3s ease-out" }}>
-                <div className="w-9 h-9 flex items-center justify-center flex-shrink-0">
+            {/* Logo - Clickable to Overview */}
+            <Link
+                href="/overview"
+                className={cn(
+                    "flex items-center h-10 mb-4 rounded-xl transition-colors group",
+                    isLayoutExpanded ? "px-4 justify-start gap-3" : "justify-center px-1.5"
+                )}
+                style={{ transition: "padding 0.3s ease-out, background-color 0.15s" }}
+                title="View Overview"
+            >
+                <motion.div
+                    whileTap={{ scale: 0.95 }}
+                    className="w-9 h-9 flex items-center justify-center flex-shrink-0"
+                >
                     <Image src="/favicon-96x96.png" alt="Hustly" width={36} height={36} />
-                </div>
+                </motion.div>
                 <AnimatePresence mode="wait">
                     {isExpanded && (
                         <motion.span
@@ -195,14 +275,14 @@ function Sidebar() {
                             initial="hidden"
                             animate="visible"
                             exit="exit"
-                            className="font-bold text-lg tracking-wide whitespace-nowrap overflow-hidden"
+                            className="font-bold text-lg tracking-wide whitespace-nowrap overflow-hidden group-hover:text-primary transition-colors"
                             style={{ color: '#F5A623' }}
                         >
                             HUSTLY
                         </motion.span>
                     )}
                 </AnimatePresence>
-            </div>
+            </Link>
 
             {/* Navigation */}
             <nav className={cn("space-y-1 flex-1", isLayoutExpanded ? "px-2" : "px-1.5")} style={{ transition: "padding 0.3s ease-out" }}>
@@ -218,8 +298,13 @@ function Sidebar() {
                 ))}
             </nav>
 
+            {/* Notification Button - Above Profile */}
+            <div className={cn("pt-2", isLayoutExpanded ? "px-2" : "px-1.5")} style={{ transition: "padding 0.3s ease-out" }}>
+                <NotificationButton isExpanded={isExpanded} isLayoutExpanded={isLayoutExpanded} />
+            </div>
+
             {/* User Profile */}
-            <div className={cn("mt-auto pt-3 border-t border-primary/10", isLayoutExpanded ? "px-2" : "px-1.5")} style={{ transition: "padding 0.3s ease-out" }}>
+            <div className={cn("mt-2 pt-3 border-t border-primary/10", isLayoutExpanded ? "px-2" : "px-1.5")} style={{ transition: "padding 0.3s ease-out" }}>
                 {/* User Menu - Show when expanded and menu is open */}
                 {isExpanded && showUserMenu && (
                     <motion.div
@@ -259,8 +344,18 @@ function Sidebar() {
                     style={{ transition: "background-color 0.15s, padding 0.3s ease-out" }}
                     title={!isLayoutExpanded ? displayName : undefined}
                 >
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center flex-shrink-0">
-                        <span className="text-xs font-bold text-black">{initials}</span>
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center flex-shrink-0 overflow-hidden relative border border-white/10">
+                        {profile?.avatar_url ? (
+                            <Image
+                                src={profile.avatar_url}
+                                alt={displayName}
+                                width={36}
+                                height={36}
+                                className="w-full h-full object-cover"
+                            />
+                        ) : (
+                            <span className="text-xs font-bold text-black">{initials}</span>
+                        )}
                     </div>
                     <AnimatePresence mode="wait">
                         {isExpanded && (
