@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { supabase } from './supabaseClient';
+import { supabase, setCachedUserId, clearUserCache } from './supabaseClient';
 import { Profile } from './database.types';
 
 interface AuthContextType {
@@ -25,14 +25,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async (userId: string) => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
 
-    if (!error && data) {
-      setProfile(data as Profile);
+      if (!error && data) {
+        setProfile(data as Profile);
+      }
+    } catch (e) {
+      console.warn('Failed to fetch profile:', e);
     }
   };
 
@@ -43,45 +47,77 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    // Timeout fallback - stop loading after 5 seconds even if Supabase doesn't respond
-    const timeoutId = setTimeout(() => {
-      if (loading) {
-        console.warn('Auth initialization timeout - proceeding without auth');
-        setLoading(false);
-      }
-    }, 5000);
+    let mounted = true;
 
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      clearTimeout(timeoutId);
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id);
+    const initAuth = async () => {
+      // Create a timeout promise that resolves (not rejects) after 2 seconds
+      const timeoutPromise = new Promise<null>((resolve) => {
+        setTimeout(() => {
+          console.warn('Auth initialization timeout - proceeding without auth');
+          resolve(null);
+        }, 2000);
+      });
+
+      try {
+        // Race between actual session fetch and timeout
+        const result = await Promise.race([
+          supabase.auth.getSession(),
+          timeoutPromise
+        ]);
+
+        if (!mounted) return;
+
+        // If timeout won, result is null
+        if (result === null) {
+          setLoading(false);
+          return;
+        }
+
+        // If session fetch won, process the result
+        const sessionData = result.data?.session;
+        setSession(sessionData ?? null);
+        setUser(sessionData?.user ?? null);
+
+        if (sessionData?.user) {
+          setCachedUserId(sessionData.user.id);
+          // Don't await - let profile load in background
+          fetchProfile(sessionData.user.id);
+        } else {
+          clearUserCache();
+        }
+      } catch (error) {
+        console.error('Auth session error:', error);
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
       }
-      setLoading(false);
-    }).catch((error) => {
-      console.error('Auth session error:', error);
-      clearTimeout(timeoutId);
-      setLoading(false);
-    });
+    };
+
+    initAuth();
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        if (!mounted) return;
         setSession(session);
         setUser(session?.user ?? null);
 
         if (session?.user) {
+          setCachedUserId(session.user.id);
           await fetchProfile(session.user.id);
         } else {
+          clearUserCache();
           setProfile(null);
         }
         setLoading(false);
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   // Real-time profile updates
@@ -132,6 +168,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    clearUserCache();
     setUser(null);
     setProfile(null);
     setSession(null);

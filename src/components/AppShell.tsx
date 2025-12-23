@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { useAuth } from "@/lib/auth-context";
@@ -52,17 +52,27 @@ export default function AppShell({ children }: AppShellProps) {
     // Initialize time block notifications for authenticated users
     useTimeBlockNotifications();
 
+    const [forceShow, setForceShow] = useState(false);
+    const [longLoading, setLongLoading] = useState(false);
+
     useEffect(() => {
-        if (!loading) {
+        if (loading) {
+            const timer = setTimeout(() => setLongLoading(true), 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [loading]);
+
+    useEffect(() => {
+        if (!loading && !forceShow) {
             // If not logged in and trying to access protected route (but not public-allowed routes)
             if (!user && !isPublic && !canViewPublicly) {
                 router.push("/landing");
             }
         }
-    }, [user, loading, isPublic, canViewPublicly, router]);
+    }, [user, loading, isPublic, canViewPublicly, router, forceShow]);
 
     // Show loading state - CLEAN & SIMPLE VERSION
-    if (loading) {
+    if (loading && !forceShow) {
         return (
             <div id="app-container" className="flex flex-col h-full will-change-transform">
                 <TitleBar />
@@ -105,6 +115,15 @@ export default function AppShell({ children }: AppShellProps) {
                         <p className="text-sm text-muted-foreground">
                             Loading...
                         </p>
+
+                        {longLoading && (
+                            <button
+                                onClick={() => setForceShow(true)}
+                                className="mt-4 text-xs text-primary hover:underline hover:text-primary/80 transition-colors"
+                            >
+                                Taking too long? Enter anyway
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>

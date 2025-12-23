@@ -1688,13 +1688,14 @@ export async function getAnalyticsData(): Promise<AnalyticsData> {
 import { TimeBlock, TimeBlockCategory } from "./database.types";
 
 export async function getTimeBlocks(date?: string, startDate?: string, endDate?: string): Promise<TimeBlock[]> {
-    const { data: userData } = await supabase.auth.getUser();
-    if (!userData.user) return [];
+    const { getCachedUserId } = await import("./supabaseClient");
+    const userId = await getCachedUserId();
+    if (!userId) return [];
 
     let query = supabase
         .from("time_blocks")
         .select("*")
-        .eq("user_id", userData.user.id)
+        .eq("user_id", userId)
         .order("start_time", { ascending: true });
 
     if (date) {
@@ -1891,15 +1892,16 @@ export async function getTodayTimeBlockStats(): Promise<{
 }
 
 export async function getUpcomingTimeBlocks(limit = 5): Promise<TimeBlock[]> {
-    const { data: userData } = await supabase.auth.getUser();
-    if (!userData.user) return [];
+    const { getCachedUserId } = await import("./supabaseClient");
+    const userId = await getCachedUserId();
+    if (!userId) return [];
 
     const now = new Date().toISOString();
 
     const { data, error } = await supabase
         .from("time_blocks")
         .select("*")
-        .eq("user_id", userData.user.id)
+        .eq("user_id", userId)
         .eq("is_completed", false)
         .gte("start_time", now)
         .order("start_time", { ascending: true })
@@ -1913,15 +1915,16 @@ export async function getUpcomingTimeBlocks(limit = 5): Promise<TimeBlock[]> {
 }
 
 export async function getCurrentTimeBlock(): Promise<TimeBlock | null> {
-    const { data: userData } = await supabase.auth.getUser();
-    if (!userData.user) return null;
+    const { getCachedUserId } = await import("./supabaseClient");
+    const userId = await getCachedUserId();
+    if (!userId) return null;
 
     const now = new Date().toISOString();
 
     const { data, error } = await supabase
         .from("time_blocks")
         .select("*")
-        .eq("user_id", userData.user.id)
+        .eq("user_id", userId)
         .lte("start_time", now)
         .gte("end_time", now)
         .single();

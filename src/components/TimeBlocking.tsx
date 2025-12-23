@@ -422,17 +422,31 @@ export default function TimeBlocking() {
     const fetchBlocks = useCallback(async () => {
         setIsLoading(true);
         setError(null);
+
+        // Create a timeout promise
+        const timeoutPromise = new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('Request timeout')), 5000)
+        );
+
         try {
             const dateStr = selectedDate.toISOString().split("T")[0];
-            const [data, current] = await Promise.all([
-                getTimeBlocks(dateStr),
-                getCurrentTimeBlock()
-            ]);
+            const [data, current] = await Promise.race([
+                Promise.all([
+                    getTimeBlocks(dateStr),
+                    getCurrentTimeBlock()
+                ]),
+                timeoutPromise
+            ]) as [TimeBlock[], TimeBlock | null];
             setBlocks(data);
             setCurrentBlock(current);
         } catch (err) {
             console.error('Error fetching time blocks:', err);
-            setError('Failed to load schedule');
+            // Don't show error for timeout - just show empty state
+            if (err instanceof Error && err.message === 'Request timeout') {
+                console.warn('Time blocks fetch timed out');
+            } else {
+                setError('Failed to load schedule');
+            }
         } finally {
             setIsLoading(false);
         }
