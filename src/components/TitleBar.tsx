@@ -83,22 +83,6 @@ export default function TitleBar() {
         }
     };
 
-    // Handle window drag
-    const startDrag = useCallback(async (e: React.MouseEvent) => {
-        // Only drag if clicking on the drag region itself, not on buttons
-        const target = e.target as HTMLElement;
-        if (target.closest('button') || target.closest('[data-no-drag]')) {
-            return;
-        }
-        if (appWindow) {
-            try {
-                await appWindow.startDragging();
-            } catch (e) {
-                console.log('Drag not supported');
-            }
-        }
-    }, [appWindow]);
-
     // Don't render TitleBar in web browser or on mobile/Android
     if (!isTauri || isMobile) {
         return null;
@@ -107,7 +91,6 @@ export default function TitleBar() {
     return (
         <div
             data-tauri-drag-region
-            onMouseDown={startDrag}
             className="h-9 bg-transparent z-[100] flex items-center justify-between px-4 select-none shrink-0 cursor-default"
         >
             {/* Empty space for drag region - logo is in sidebar */}

@@ -478,23 +478,21 @@ export interface DashboardStats {
 }
 
 export async function getDashboardStats(): Promise<DashboardStats> {
-    const profile = await getProfile();
-
-    // Get tasks completed this month
     const startOfMonth = new Date();
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);
 
-    const { data: completedTasks } = await supabase
-        .from("ideas")
-        .select("id")
-        .eq("status", "done");
-
-    // Get monthly transactions
-    const { data: monthlyTransactions } = await supabase
-        .from("transactions")
-        .select("amount, type")
-        .gte("date", startOfMonth.toISOString().split("T")[0]);
+    const [
+        profile,
+        { data: completedTasks },
+        { data: monthlyTransactions },
+        { data: activeGoals }
+    ] = await Promise.all([
+        getProfile(),
+        supabase.from("ideas").select("id").eq("status", "done"),
+        supabase.from("transactions").select("amount, type").gte("date", startOfMonth.toISOString().split("T")[0]),
+        supabase.from("goals").select("id").eq("is_completed", false)
+    ]);
 
     const monthlyIncome = (monthlyTransactions || [])
         .filter(t => t.type === 'income')
@@ -503,12 +501,6 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     const monthlyExpense = (monthlyTransactions || [])
         .filter(t => t.type === 'expense')
         .reduce((sum, t) => sum + (t.amount || 0), 0);
-
-    // Get active goals
-    const { data: activeGoals } = await supabase
-        .from("goals")
-        .select("id")
-        .eq("is_completed", false);
 
     return {
         productivityScore: profile?.productivity_score || 0,

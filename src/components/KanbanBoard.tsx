@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, memo, useCallback } from "react";
+import { useState, useEffect, memo, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus,
@@ -76,21 +77,54 @@ interface IdeaCardProps {
   idea: Idea;
   onEdit: (idea: Idea) => void;
   onDelete: (id: string) => void;
+  onMove: (id: string, status: IdeaStatus) => void;
   isDragging?: boolean;
 }
 
-const IdeaCard = memo(function IdeaCard({ idea, onEdit, onDelete, isDragging }: IdeaCardProps) {
+const IdeaCard = memo(function IdeaCard({ idea, onEdit, onDelete, onMove, isDragging }: IdeaCardProps) {
   const [showMenu, setShowMenu] = useState(false);
+  const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const priorityStyle = priorityConfig[idea.priority];
+
+  const moveOptions = columns.filter(col => col.id !== idea.status);
+
+  const handleMenuToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!showMenu && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      const MENU_WIDTH = 160;
+      const MENU_HEIGHT = 150; // Approximated height
+
+      let top = rect.bottom + 4;
+      let left = rect.right - MENU_WIDTH;
+
+      // Check if it fits below, otherwise show above
+      if (typeof window !== 'undefined' && top + MENU_HEIGHT > window.innerHeight) {
+        top = rect.top - MENU_HEIGHT - 4;
+      }
+
+      setMenuPos({ top, left });
+    }
+    setShowMenu(!showMenu);
+  };
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    if (!showMenu) return;
+    const handleClick = () => setShowMenu(false);
+    document.addEventListener('click', handleClick);
+    return () => document.removeEventListener('click', handleClick);
+  }, [showMenu]);
 
   return (
     <motion.div
-      layout
+      layout="position"
       layoutId={idea.id}
       initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: isDragging ? 0.5 : 1, scale: isDragging ? 0.95 : 1 }}
+      animate={{ opacity: isDragging ? 0.5 : 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
-      whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
+      transition={{ duration: 0.2 }}
       className="group relative"
       onDoubleClick={() => onEdit(idea)}
     >
@@ -101,8 +135,8 @@ const IdeaCard = memo(function IdeaCard({ idea, onEdit, onDelete, isDragging }: 
       )} style={{ filter: "blur(20px)" }} />
 
       <div className={cn(
-        "relative rounded-xl border p-4 backdrop-blur-xl transition-all duration-200 overflow-hidden",
-        "bg-card/40 hover:bg-card/60",
+        "relative rounded-xl border p-4 backdrop-blur-xl transition-all duration-200 overflow-visible",
+        "bg-card/40 hover:bg-card/60 hover:scale-[1.02]",
         priorityStyle.border
       )}>
         {/* Priority Stripe */}
@@ -117,29 +151,50 @@ const IdeaCard = memo(function IdeaCard({ idea, onEdit, onDelete, isDragging }: 
 
             <div className="relative">
               <button
-                onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); }}
-                className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-muted-foreground hover:text-white"
+                ref={buttonRef}
+                onClick={handleMenuToggle}
+                onPointerDown={(e) => e.stopPropagation()}
+                onMouseDown={(e) => e.stopPropagation()}
+                className="relative z-20 opacity-0 group-hover:opacity-100 transition-opacity p-1 text-muted-foreground hover:text-white"
               >
                 <MoreHorizontal size={16} />
               </button>
 
-              <AnimatePresence>
-                {showMenu && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    className="absolute right-0 top-full mt-1 w-32 bg-[#1A1A1A] border border-white/10 rounded-lg shadow-xl z-50 overflow-hidden"
-                  >
-                    <button onClick={(e) => { e.stopPropagation(); onEdit(idea); setShowMenu(false); }} className="w-full text-left px-3 py-2 text-xs text-zinc-300 hover:bg-white/10 flex items-center gap-2">
-                      <Edit3 size={12} /> Edit
-                    </button>
+              {/* Fixed position dropdown menu (escapes overflow:hidden) */}
+              {showMenu && typeof document !== 'undefined' && createPortal(
+                <div
+                  className="fixed w-40 bg-[#1A1A1A] border border-white/10 rounded-lg shadow-2xl z-[9999] overflow-hidden"
+                  style={{ top: menuPos.top, left: menuPos.left }}
+                  onClick={(e) => e.stopPropagation()}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => e.stopPropagation()}
+                >
+                  <button onClick={(e) => { e.stopPropagation(); onEdit(idea); setShowMenu(false); }} className="w-full text-left px-3 py-2 text-xs text-zinc-300 hover:bg-white/10 flex items-center gap-2">
+                    <Edit3 size={12} /> Edit
+                  </button>
+
+                  {/* Move To options */}
+                  <div className="border-t border-white/5 py-1">
+                    <p className="px-3 py-1 text-[10px] text-zinc-500 uppercase tracking-wider">Move to</p>
+                    {moveOptions.map(col => (
+                      <button
+                        key={col.id}
+                        onClick={(e) => { e.stopPropagation(); onMove(idea.id, col.id); setShowMenu(false); }}
+                        className={cn("w-full text-left px-3 py-1.5 text-xs hover:bg-white/10 flex items-center gap-2", col.color)}
+                      >
+                        {col.icon} {col.title}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="border-t border-white/5">
                     <button onClick={(e) => { e.stopPropagation(); onDelete(idea.id); setShowMenu(false); }} className="w-full text-left px-3 py-2 text-xs text-red-400 hover:bg-red-500/10 flex items-center gap-2">
                       <Trash2 size={12} /> Delete
                     </button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                  </div>
+                </div>,
+                document.body
+              )}
             </div>
           </div>
 
@@ -390,6 +445,13 @@ export default function KanbanBoard() {
     if (await deleteIdea(id)) setIdeas(prev => prev.filter(i => i.id !== id));
   };
 
+  const handleMove = async (id: string, status: IdeaStatus) => {
+    // Optimistic update
+    setIdeas(prev => prev.map(i => i.id === id ? { ...i, status, updated_at: new Date().toISOString() } : i));
+    // Actual update (silent)
+    await updateIdea(id, { status });
+  };
+
   const filteredIdeas = ideas.filter(idea =>
     idea.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     idea.tags.some(t => t.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -399,18 +461,19 @@ export default function KanbanBoard() {
 
   // Drag & Drop Handlers
   const onDragStart = (e: React.DragEvent, idea: Idea) => {
-    setDraggedIdea(idea);
+    e.dataTransfer.setData("text/plain", idea.id);
     e.dataTransfer.effectAllowed = "move";
-    // Transparent ghost image
-    const ghost = document.createElement('div');
-    ghost.style.opacity = '0';
-    document.body.appendChild(ghost);
-    e.dataTransfer.setDragImage(ghost, 0, 0);
-    setTimeout(() => document.body.removeChild(ghost), 0);
+    setDraggedIdea(idea);
+  };
+
+  const onDragEnd = () => {
+    setDraggedIdea(null);
+    setDragOverColumn(null);
   };
 
   const onDragOver = (e: React.DragEvent, status: IdeaStatus) => {
     e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
     if (dragOverColumn !== status) setDragOverColumn(status);
   };
 
@@ -522,12 +585,17 @@ export default function KanbanBoard() {
                       key={idea.id}
                       draggable
                       onDragStart={e => onDragStart(e, idea)}
-                      className={cn("touch-none", draggedIdea?.id === idea.id && "opacity-30 grayscale")}
+                      onDragEnd={onDragEnd}
+                      className={cn(
+                        "cursor-grab active:cursor-grabbing select-none",
+                        draggedIdea?.id === idea.id && "opacity-30"
+                      )}
                     >
                       <IdeaCard
                         idea={idea}
                         onEdit={idea => { setEditingIdea(idea); setIsModalOpen(true); }}
                         onDelete={handleDelete}
+                        onMove={handleMove}
                         isDragging={draggedIdea?.id === idea.id}
                       />
                     </div>
