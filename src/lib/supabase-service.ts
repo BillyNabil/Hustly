@@ -1,4 +1,4 @@
-import { supabase } from "./supabaseClient";
+import { supabase, getCachedUserId } from "./supabaseClient";
 import {
     Idea,
     Transaction,
@@ -16,6 +16,33 @@ import {
     Notification,
     DailyStats,
 } from "./database.types";
+
+/**
+ * Helper to enforce timeouts on Supabase operations
+ */
+async function withTimeout<T>(
+    promise: Promise<T>,
+    ms: number = 8000,
+    fallbackValue: T | undefined = undefined
+): Promise<T> {
+    let timeoutId: NodeJS.Timeout;
+    const timeoutPromise = new Promise<T>((_, reject) => {
+        timeoutId = setTimeout(() => {
+            reject(new Error(`Operation timed out after ${ms}ms`));
+        }, ms);
+    });
+
+    try {
+        const result = await Promise.race([promise, timeoutPromise]);
+        clearTimeout(timeoutId!);
+        return result;
+    } catch (error) {
+        clearTimeout(timeoutId!);
+        console.warn(`Supabase operation warning:`, error);
+        if (fallbackValue !== undefined) return fallbackValue;
+        throw error;
+    }
+}
 
 // =============================================
 // IDEAS (Kanban Board)
@@ -359,20 +386,29 @@ export async function uploadAvatar(file: File): Promise<string | null> {
 }
 
 export async function getProfile(): Promise<Profile | null> {
-    const { data: userData } = await supabase.auth.getUser();
-    if (!userData.user) return null;
+    const userId = await getCachedUserId();
+    if (!userId) return null;
 
-    const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", userData.user.id)
-        .single();
+    try {
+        const { data, error } = await withTimeout(
+            Promise.resolve(supabase
+                .from("profiles")
+                .select("*")
+                .eq("id", userId)
+                .single()),
+            5000,
+            { data: null, error: { message: 'Timeout' } } as any
+        );
 
-    if (error) {
-        console.error("Error fetching profile:", error);
+        if (error) {
+            console.error("Error fetching profile:", error);
+            return null;
+        }
+        return data;
+    } catch (e) {
+        console.error("Profile fetch failed:", e);
         return null;
     }
-    return data;
 }
 
 export async function updateProfile(updates: Partial<Profile>): Promise<Profile | null> {
@@ -440,27 +476,39 @@ function calculateHustleLevel(score: number): string {
 // LEADERBOARD
 // =============================================
 
-export interface LeaderboardEntry extends Profile {
+export interface LeaderboardEntry {
+    id: string;
+    full_name: string | null;
+    avatar_url: string | null;
+    hustle_level: string;
+    productivity_score: number;
+    total_earnings: number;
+    total_focus_hours: number;
     rank: number;
 }
 
 export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
-    const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .gt("productivity_score", 0)
-        .order("productivity_score", { ascending: false })
-        .limit(100);
+    try {
+        const { data, error } = await withTimeout(
+            Promise.resolve(supabase
+                .from("leaderboard")
+                .select("*")
+                .order("rank", { ascending: true })
+                .limit(100)),
+            5000,
+            { data: [], error: { message: 'Timeout' } } as any
+        );
 
-    if (error) {
-        console.error("Error fetching leaderboard:", error);
+        if (error) {
+            console.error("Error fetching leaderboard:", error);
+            return [];
+        }
+
+        return (data as any[]) || [];
+    } catch (e) {
+        console.error("Leaderboard fetch failed:", e);
         return [];
     }
-
-    return (data || []).map((profile, index) => ({
-        ...profile,
-        rank: index + 1,
-    }));
 }
 
 // =============================================
@@ -482,49 +530,71 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);
 
-    const [
-        profile,
-        { data: completedTasks },
-        { data: monthlyTransactions },
-        { data: activeGoals }
-    ] = await Promise.all([
-        getProfile(),
-        supabase.from("ideas").select("id").eq("status", "done"),
-        supabase.from("transactions").select("amount, type").gte("date", startOfMonth.toISOString().split("T")[0]),
-        supabase.from("goals").select("id").eq("is_completed", false)
-    ]);
+    try {
+        const [
+            profile,
+            { data: completedTasks },
+            { data: monthlyTransactions },
+            { data: activeGoals }
+        ] = await Promise.all([
+            getProfile(),
+            withTimeout(Promise.resolve(supabase.from("ideas").select("id").eq("status", "done")), 5000, { data: [] } as any),
+            withTimeout(Promise.resolve(supabase.from("transactions").select("amount, type").gte("date", startOfMonth.toISOString().split("T")[0])), 5000, { data: [] } as any),
+            withTimeout(Promise.resolve(supabase.from("goals").select("id").eq("is_completed", false)), 5000, { data: [] } as any)
+        ]);
 
-    const monthlyIncome = (monthlyTransactions || [])
-        .filter(t => t.type === 'income')
-        .reduce((sum, t) => sum + (t.amount || 0), 0);
+        const monthlyIncome = (monthlyTransactions || [])
+            .filter((t: any) => t.type === 'income')
+            .reduce((sum: number, t: any) => sum + (t.amount || 0), 0);
 
-    const monthlyExpense = (monthlyTransactions || [])
-        .filter(t => t.type === 'expense')
-        .reduce((sum, t) => sum + (t.amount || 0), 0);
+        const monthlyExpense = (monthlyTransactions || [])
+            .filter((t: any) => t.type === 'expense')
+            .reduce((sum: number, t: any) => sum + (t.amount || 0), 0);
 
-    return {
-        productivityScore: profile?.productivity_score || 0,
-        monthlyIncome,
-        monthlyExpense,
-        hustleLevel: profile?.hustle_level || "Newbie Hustler",
-        tasksCompleted: (completedTasks || []).length,
-        focusHours: profile?.total_focus_hours || 0,
-        activeGoals: (activeGoals || []).length,
-    };
+        return {
+            productivityScore: profile?.productivity_score || 0,
+            monthlyIncome,
+            monthlyExpense,
+            hustleLevel: profile?.hustle_level || "Newbie Hustler",
+            tasksCompleted: (completedTasks || []).length,
+            focusHours: profile?.total_focus_hours || 0,
+            activeGoals: (activeGoals || []).length,
+        };
+    } catch (e) {
+        console.error("Dashboard stats failed:", e);
+        return {
+            productivityScore: 0,
+            monthlyIncome: 0,
+            monthlyExpense: 0,
+            hustleLevel: "Offline",
+            tasksCompleted: 0,
+            focusHours: 0,
+            activeGoals: 0,
+        };
+    }
 }
 
 export async function getRecentTasks(): Promise<Idea[]> {
-    const { data, error } = await supabase
-        .from("ideas")
-        .select("*")
-        .order("updated_at", { ascending: false })
-        .limit(5);
+    try {
+        const { data, error } = await withTimeout(
+            Promise.resolve(supabase
+                .from("ideas")
+                .select("*")
+                .order("updated_at", { ascending: false })
+                .limit(5)),
+            5000,
+            { data: [], error: { message: 'Timeout' } } as any
+        );
 
-    if (error) {
-        console.error("Error fetching recent tasks:", error);
+        if (error) {
+            console.error("Error fetching recent tasks:", error);
+            return [];
+        }
+        return data || [];
+    } catch (e) {
+        console.error("Recent tasks fetch failed:", e);
         return [];
     }
-    return data || [];
 }
 
 // =============================================
@@ -927,23 +997,27 @@ const CHALLENGE_TEMPLATES = [
 ];
 
 export async function getTodayChallenge(): Promise<DailyChallenge | null> {
-    const { data: userData } = await supabase.auth.getUser();
-    if (!userData.user) return null;
+    const userId = await getCachedUserId();
+    if (!userId) return null;
 
     const today = new Date().toISOString().split('T')[0];
 
     try {
         // 1. Check if user ALREADY has a challenge assigned for today
         // We fetch the last few assignments and perform client-side matching to ensure robustness
-        const { data: recentUserChallenges } = await supabase
-            .from("user_challenges")
-            .select(`
+        const { data: recentUserChallenges } = await withTimeout(
+            Promise.resolve(supabase
+                .from("user_challenges")
+                .select(`
                 *,
                 daily_challenges (*)
             `)
-            .eq("user_id", userData.user.id)
-            .order("created_at", { ascending: false })
-            .limit(10);
+                .eq("user_id", userId)
+                .order("created_at", { ascending: false })
+                .limit(10)),
+            5000,
+            { data: null } as any
+        );
 
         if (recentUserChallenges) {
             for (const uc of recentUserChallenges) {
@@ -1031,15 +1105,19 @@ export async function getTodayChallenge(): Promise<DailyChallenge | null> {
         }
 
         // 6. Assign to user
-        if (dayChallenge.id !== 'fallback-id') {
-            const { error: assignError } = await supabase
-                .from("user_challenges")
-                .insert({
-                    user_id: userData.user.id,
-                    challenge_id: dayChallenge.id,
-                    current_progress: 0,
-                    is_completed: false
-                });
+        if (dayChallenge.id !== 'fallback-id' && dayChallenge.id !== 'error-fallback') {
+            const { error: assignError } = await withTimeout(
+                Promise.resolve(supabase
+                    .from("user_challenges")
+                    .insert({
+                        user_id: userId,
+                        challenge_id: dayChallenge.id,
+                        current_progress: 0,
+                        is_completed: false
+                    })),
+                3000,
+                { error: null } as any
+            );
 
             if (assignError && assignError.code !== '23505') {
                 console.error("Assign error", assignError);
@@ -1066,15 +1144,19 @@ export async function getTodayChallenge(): Promise<DailyChallenge | null> {
 }
 
 export async function getUserChallengeProgress(challengeId: string): Promise<UserChallenge | null> {
-    const { data: userData } = await supabase.auth.getUser();
-    if (!userData.user) return null;
+    const userId = await getCachedUserId();
+    if (!userId) return null;
 
-    const { data, error } = await supabase
-        .from("user_challenges")
-        .select("*")
-        .eq("user_id", userData.user.id)
-        .eq("challenge_id", challengeId)
-        .single();
+    const { data, error } = await withTimeout(
+        Promise.resolve(supabase
+            .from("user_challenges")
+            .select("*")
+            .eq("user_id", userId)
+            .eq("challenge_id", challengeId)
+            .single()),
+        4000,
+        { data: null, error: { message: 'Timeout' } } as any
+    );
 
     if (error && error.code !== 'PGRST116') {
         console.error("Error fetching challenge progress:", error);
@@ -1247,8 +1329,8 @@ export async function checkDailyChallengeProgress(
 // =============================================
 
 export async function getWeeklyGoals(): Promise<WeeklyGoal[]> {
-    const { data: userData } = await supabase.auth.getUser();
-    if (!userData.user) return [];
+    const userId = await getCachedUserId();
+    if (!userId) return [];
 
     // Get start of current week (Monday)
     const now = new Date();
@@ -1257,18 +1339,27 @@ export async function getWeeklyGoals(): Promise<WeeklyGoal[]> {
     const weekStart = new Date(now.setDate(diff));
     weekStart.setHours(0, 0, 0, 0);
 
-    const { data, error } = await supabase
-        .from("weekly_goals")
-        .select("*")
-        .eq("user_id", userData.user.id)
-        .eq("week_start", weekStart.toISOString().split('T')[0])
-        .order("created_at", { ascending: true });
+    try {
+        const { data, error } = await withTimeout(
+            Promise.resolve(supabase
+                .from("weekly_goals")
+                .select("*")
+                .eq("user_id", userId)
+                .eq("week_start", weekStart.toISOString().split('T')[0])
+                .order("created_at", { ascending: true }),
+            ),
+            5000,
+            { data: [], error: { message: 'Timeout' } } as any
+        );
 
-    if (error) {
-        console.error("Error fetching weekly goals:", error);
+        if (error) {
+            console.error("Error fetching weekly goals:", error);
+            return [];
+        }
+        return data || [];
+    } catch (e) {
         return [];
     }
-    return data || [];
 }
 
 export async function createWeeklyGoal(goal: Partial<WeeklyGoal>): Promise<WeeklyGoal | null> {

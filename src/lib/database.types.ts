@@ -630,6 +630,20 @@ export interface Database {
           linked_task_id?: string | null
           notes?: string | null
         }
+      },
+      Views: {
+        leaderboard: {
+          Row: {
+            id: string
+            full_name: string | null
+            avatar_url: string | null
+            hustle_level: string
+            productivity_score: number
+            total_earnings: number
+            total_focus_hours: number
+            rank: number
+          }
+        }
       }
     }
   }
