@@ -17,8 +17,21 @@ export async function getCachedUserId(): Promise<string | null> {
     if (cachedUserId) return cachedUserId;
 
     try {
-        const { data } = await supabase.auth.getSession();
-        cachedUserId = data.session?.user?.id || null;
+        // Create a timeout promise that resolves after 2 seconds
+        const timeoutPromise = new Promise<{ data: { session: null } }>((resolve) => {
+            setTimeout(() => {
+                console.warn('getCachedUserId timeout - proceeding without auth');
+                resolve({ data: { session: null } });
+            }, 2000);
+        });
+
+        // Race between actual session fetch and timeout
+        const { data } = await Promise.race([
+            supabase.auth.getSession(),
+            timeoutPromise
+        ]);
+
+        cachedUserId = data?.session?.user?.id || null;
         return cachedUserId;
     } catch (e) {
         console.warn('Failed to get cached user ID:', e);
