@@ -32,12 +32,6 @@
     }
   },
   "bundle": {
-    "active": true,
-    "targets": "app",
-    "windows": {
-      "nsis": {
-        "installMode": "currentUser"
-      }
-    }
+    "active": false
   }
 }
